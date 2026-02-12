@@ -1,0 +1,56 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env.local
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+__pycache__/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Production
+frontend/build/
+dist/
+
+# Testing
+coverage/
+
+# Misc
+*.log
+*.bak
+*.backup

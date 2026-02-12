@@ -1,0 +1,1386 @@
+/* --- Font Imports --- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+/* ============================================
+   FindMyJobAI - Design System
+   ============================================ */
+
+/* --- CSS Custom Properties --- */
+:root {
+  /* Typography */
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Text Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(20, 184, 166, 0.15);
+}
+
+/* --- Light Theme (Default) --- */
+:root {
+  --bg-primary: #fafafa;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #ffffff;
+  --bg-hover: #e4e4e7;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  --accent-primary: #0d9488;
+  --accent-secondary: #14b8a6;
+  --accent-muted: #0f766e;
+  --accent-light: rgba(20, 184, 166, 0.1);
+  
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.1);
+  --info: #3b82f6;
+  --info-light: rgba(59, 130, 246, 0.1);
+  
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --text-disabled: #a1a1aa;
+  --text-inverse: #fafafa;
+  
+  --border-subtle: #e4e4e7;
+  --border-default: #d4d4d8;
+  --border-focus: #0d9488;
+  
+  --grain-opacity: 0.03;
+}
+
+/* --- Dark Theme --- */
+.dark {
+  --bg-primary: #0a0a0b;
+  --bg-secondary: #111113;
+  --bg-tertiary: #18181b;
+  --bg-hover: #1f1f23;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  --accent-primary: #14b8a6;
+  --accent-secondary: #2dd4bf;
+  --accent-muted: #0d9488;
+  --accent-light: rgba(20, 184, 166, 0.15);
+  
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.15);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.15);
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.15);
+  --info: #3b82f6;
+  --info-light: rgba(59, 130, 246, 0.15);
+  
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-disabled: #52525b;
+  --text-inverse: #18181b;
+  
+  --border-subtle: #27272a;
+  --border-default: #3f3f46;
+  --border-focus: #14b8a6;
+  
+  --grain-opacity: 0.02;
+}
+
+/* --- Base Styles --- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* --- Typography --- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Hide scrollbar for specific elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --- Focus Styles --- */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* --- Selection --- */
+::selection {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+/* --- Animations --- */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes morphIcon {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  33% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  66% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+@keyframes progressGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation utility classes */
+.animate-shimmer {
+  animation: shimmer 1.5s linear infinite;
+  background-size: 200% 100%;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-morph {
+  animation: morphIcon 2s ease-in-out infinite;
+}
+
+/* --- Utility Classes --- */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-accent {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-muted));
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/* --- Component Base Styles --- */
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-muted);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-focus);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Cards */
+.card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badge-primary {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.badge-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* ============================================
+   Phase 5.1: Micro-Interactions
+   ============================================ */
+
+/* --- Button Interactions --- */
+
+/* Primary button with scale + glow on hover */
+.btn-primary {
+  transition: all 150ms ease-out;
+  will-change: transform, box-shadow;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+/* Secondary button with subtle scale */
+.btn-secondary {
+  transition: all 150ms ease-out;
+  will-change: transform, border-color;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  transform: scale(1.01);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.99);
+  transition-duration: 100ms;
+}
+
+/* Ghost button with background fade */
+.btn-ghost {
+  transition: all 150ms ease-out;
+  will-change: background-color, color;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn-ghost:active:not(:disabled) {
+  background: var(--border-subtle);
+}
+
+/* Icon button with scale */
+.btn-icon {
+  transition: all 150ms ease-out;
+  will-change: transform;
+}
+
+.btn-icon:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.btn-icon:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: 100ms;
+}
+
+/* --- Card Interactions --- */
+
+/* Job card hover lift effect */
+.job-card {
+  transition: all 200ms ease-out;
+  will-change: transform, box-shadow, border-color;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.05);
+  border-color: var(--accent-primary);
+}
+
+.job-card:active {
+  transform: translateY(0);
+  transition-duration: 100ms;
+}
+
+/* Card with left border highlight */
+.job-card-highlight {
+  border-left: 3px solid transparent;
+  transition: all 200ms ease-out;
+}
+
+.job-card-highlight:hover {
+  border-left-color: var(--accent-primary);
+}
+
+/* --- Tab Interactions --- */
+
+/* Tab indicator slide animation */
+.tab-indicator {
+  transition: all 200ms ease-in-out;
+  will-change: left, width;
+}
+
+/* Tab button with underline effect */
+.tab-button {
+  position: relative;
+  transition: all 150ms ease-out;
+}
+
+.tab-button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent-primary);
+  transition: all 200ms ease-out;
+  transform: translateX(-50%);
+}
+
+.tab-button:hover::after {
+  width: 50%;
+}
+
+.tab-button.active::after {
+  width: 100%;
+}
+
+/* Tab content fade */
+.tab-content {
+  animation: fadeIn 150ms ease-out;
+}
+
+/* --- Modal Interactions --- */
+
+/* Modal backdrop */
+.modal-backdrop {
+  animation: fadeIn 150ms ease-out;
+}
+
+/* Modal content scale in */
+.modal-enter {
+  animation: modalEnter 200ms ease-out;
+}
+
+.modal-exit {
+  animation: modalExit 150ms ease-in;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+/* --- Toast Interactions --- */
+
+/* Toast slide in from right */
+.toast-enter {
+  animation: toastEnter 300ms ease-out;
+}
+
+.toast-exit {
+  animation: toastExit 200ms ease-in forwards;
+}
+
+@keyframes toastEnter {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastExit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* --- Dropdown Interactions --- */
+
+/* Dropdown fade + slide */
+.dropdown-enter {
+  animation: dropdownEnter 150ms ease-out;
+}
+
+.dropdown-exit {
+  animation: dropdownExit 100ms ease-in forwards;
+}
+
+@keyframes dropdownEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* --- Focus Ring Animations --- */
+
+/* Pulsing focus ring */
+.focus-ring-pulse {
+  position: relative;
+}
+
+.focus-ring-pulse:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--accent-primary);
+  animation: focusPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes focusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+}
+
+/* Focus ring with glow */
+.focus-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-light), 0 0 15px rgba(20, 184, 166, 0.3);
+}
+
+/* --- Action Button Interactions --- */
+
+/* Accept button (green) */
+.btn-accept {
+  transition: all 150ms ease-out;
+  will-change: transform, background-color;
+}
+
+.btn-accept:hover:not(:disabled) {
+  transform: scale(1.1);
+  background: var(--success);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-accept:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Reject button (red) */
+.btn-reject {
+  transition: all 150ms ease-out;
+  will-change: transform, background-color;
+}
+
+.btn-reject:hover:not(:disabled) {
+  transform: scale(1.1);
+  background: var(--danger);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.btn-reject:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* --- Link Interactions --- */
+
+/* Link with underline animation */
+.link-animated {
+  position: relative;
+  text-decoration: none;
+  transition: color 150ms ease-out;
+}
+
+.link-animated::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--accent-primary);
+  transition: width 200ms ease-out;
+}
+
+.link-animated:hover::after {
+  width: 100%;
+}
+
+/* --- Checkbox/Radio Interactions --- */
+
+/* Custom checkbox with scale animation */
+.checkbox-animated {
+  transition: all 150ms ease-out;
+}
+
+.checkbox-animated:checked {
+  animation: checkBounce 300ms ease-out;
+}
+
+@keyframes checkBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- Skeleton Loading --- */
+
+/* Skeleton with shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* --- Hover Card for Job Details --- */
+
+/* Card that reveals more on hover */
+.hover-reveal {
+  transition: all 200ms ease-out;
+}
+
+.hover-reveal .reveal-content {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 200ms ease-out;
+}
+
+.hover-reveal:hover .reveal-content {
+  opacity: 1;
+  max-height: 200px;
+}
+
+/* --- Reduced Motion Support --- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-icon:hover:not(:disabled),
+  .job-card:hover,
+  .btn-accept:hover:not(:disabled),
+  .btn-reject:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ============================================
+   Phase 5.2: Transitions & Animations
+   ============================================ */
+
+/* --- Page Load Sequence --- */
+
+/* Initial state for page content */
+.page-load-enter {
+  animation: pageLoadEnter 400ms ease-out;
+}
+
+@keyframes pageLoadEnter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: staggerFadeIn 300ms ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(10) { animation-delay: 450ms; }
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Theme Toggle Transition --- */
+
+/* Smooth color transition for theme changes */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: 
+    background-color 300ms ease-out,
+    border-color 300ms ease-out,
+    color 150ms ease-out,
+    box-shadow 300ms ease-out !important;
+}
+
+/* --- Sidebar Drawer Transitions --- */
+
+/* Desktop sidebar hover expand */
+.sidebar-hover-expand {
+  width: 280px;
+  transition: width 200ms ease-out;
+}
+
+.sidebar-hover-expand:hover {
+  width: 320px;
+}
+
+/* Mobile drawer slide */
+.drawer-slide-enter {
+  animation: drawerSlideIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-slide-exit {
+  animation: drawerSlideOut 150ms ease-in forwards;
+}
+
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawerSlideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* --- Job List Transitions --- */
+
+/* Job card staggered entrance */
+.job-list-enter {
+  animation: jobListEnter 300ms ease-out;
+}
+
+@keyframes jobListEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Job card exit animation */
+.job-card-exit {
+  animation: jobCardExit 200ms ease-in forwards;
+}
+
+@keyframes jobCardExit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 100px;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+}
+
+/* --- Filter Change Transition --- */
+
+/* Smooth height transition for filter changes */
+.filter-transition {
+  overflow: hidden;
+  transition: height 200ms ease-out, opacity 200ms ease-out;
+}
+
+.filter-enter {
+  animation: filterEnter 200ms ease-out;
+}
+
+.filter-exit {
+  animation: filterExit 150ms ease-in forwards;
+}
+
+@keyframes filterEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes filterExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+/* --- Skeleton to Content Crossfade --- */
+
+.skeleton-wrapper {
+  position: relative;
+}
+
+.skeleton-wrapper .skeleton-content {
+  transition: opacity 200ms ease-out;
+}
+
+.skeleton-wrapper .real-content {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.skeleton-wrapper.loaded .skeleton-content {
+  opacity: 0;
+}
+
+.skeleton-wrapper.loaded .real-content {
+  opacity: 1;
+  position: relative;
+}
+
+/* --- Empty State Entrance Animation --- */
+
+.empty-state-enter {
+  animation: emptyStateEnter 400ms ease-out;
+}
+
+@keyframes emptyStateEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Empty state icon float animation */
+.empty-state-icon {
+  animation: emptyStateFloat 3s ease-in-out infinite;
+}
+
+@keyframes emptyStateFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* --- Progress Bar Entrance Animation --- */
+
+.progress-bar-enter {
+  animation: progressBarEnter 300ms ease-out;
+}
+
+@keyframes progressBarEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-bar-exit {
+  animation: progressBarExit 200ms ease-in forwards;
+}
+
+@keyframes progressBarExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Progress bar fill animation */
+.progress-fill {
+  transition: width 300ms ease-out;
+}
+
+/* --- Content Fade Transitions --- */
+
+.content-fade-enter {
+  animation: contentFadeEnter 200ms ease-out;
+}
+
+.content-fade-exit {
+  animation: contentFadeExit 150ms ease-in forwards;
+}
+
+@keyframes contentFadeEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes contentFadeExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- List Reorder Animation --- */
+
+.list-reorder-enter {
+  animation: listReorderEnter 250ms ease-out;
+}
+
+@keyframes listReorderEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Number Counter Animation --- */
+
+.counter-animate {
+  transition: transform 200ms ease-out;
+}
+
+.counter-animate.updating {
+  transform: scale(1.1);
+}
+
+/* --- Responsive Utilities --- */
+@media (max-width: 1023px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* --- Loading Screen Specific --- */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+}
+
+.loading-icon {
+  width: 64px;
+  height: 64px;
+  position: relative;
+}
+
+.loading-logo-text {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  margin-top: var(--space-md);
+  color: var(--text-primary);
+}
+
+.loading-dots {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: var(--space-md);
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* --- Mobile Specific Styles --- */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Mobile drawer animation */
+.mobile-drawer-enter {
+  animation: slideInLeft 300ms ease-out forwards;
+}
+
+.mobile-drawer-exit {
+  animation: slideOutLeft 200ms ease-in forwards;
+}
+
+/* Touch-friendly tap highlight */
+@media (max-width: 1023px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Larger touch targets */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea {
+    min-height: 44px;
+  }
+  
+  /* Prevent text selection on interactive elements */
+  button, 
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth scrolling */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-top {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+}
+
+/* Pull to refresh indicator */
+.pull-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  transition: transform 200ms ease;
+}
+
+.pull-indicator.visible {
+  transform: translateX(-50%) translateY(0);
+}
