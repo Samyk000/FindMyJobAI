@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
+  // Accessibility metadata
+  other: {
+    "format-detection": "telephone=no",
+  },
 };
 
 export const viewport: Viewport = {
@@ -50,10 +54,32 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preconnect to font sources for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Focus visible polyfill behavior via CSS */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Hide focus styles for mouse users */
+          body.using-mouse *:focus { outline: none; }
+        `}} />
+      </head>
       <body
         className={`${outfit.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        {/* Skip to main content link for keyboard users */}
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-teal-500 focus:text-white focus:rounded-lg focus:outline-none"
+        >
+          Skip to main content
+        </a>
         {children}
+        {/* Script to detect mouse vs keyboard navigation */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          document.addEventListener('mousedown', function() { document.body.classList.add('using-mouse'); });
+          document.addEventListener('keydown', function(e) { if (e.key === 'Tab') document.body.classList.remove('using-mouse'); });
+        `}} />
       </body>
     </html>
   );

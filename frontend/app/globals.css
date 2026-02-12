@@ -1384,3 +1384,493 @@ h1, h2, h3, h4, h5, h6 {
 .pull-indicator.visible {
   transform: translateX(-50%) translateY(0);
 }
+
+/* ============================================
+   Phase 5.4: Accessibility & UI Edge Cases
+   ============================================ */
+
+/* --- Screen Reader Utilities --- */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible utility - shows focus ring only on keyboard focus */
+.focus-visible-only:focus {
+  outline: none;
+}
+
+.focus-visible-only:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* --- Enhanced Focus Indicators --- */
+
+/* High contrast focus ring for interactive elements */
+.focus-ring-high-contrast:focus-visible {
+  outline: 3px solid var(--accent-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--accent-light);
+}
+
+/* Focus ring for dark backgrounds */
+.focus-ring-dark:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.3);
+}
+
+/* --- Keyboard Navigation Enhancements --- */
+
+/* Focus trap container for modals */
+.focus-trap {
+  position: relative;
+}
+
+/* Visible focus for all interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Remove default focus for mouse users, keep for keyboard */
+.using-mouse *:focus {
+  outline: none;
+}
+
+/* --- High Contrast Mode Support --- */
+
+@media (prefers-contrast: high) {
+  .btn-primary {
+    border: 2px solid currentColor;
+  }
+  
+  .job-card {
+    border-width: 2px;
+  }
+  
+  .tab-button.active {
+    border-bottom: 3px solid var(--accent-primary);
+  }
+  
+  /* Ensure text is readable */
+  * {
+    font-weight: 500;
+  }
+}
+
+/* --- Forced Colors Mode (Windows High Contrast) --- */
+
+@media (forced-colors: active) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-icon {
+    border: 1px solid currentColor;
+  }
+  
+  .job-card:hover {
+    outline: 2px solid Highlight;
+  }
+  
+  a:hover,
+  button:hover {
+    text-decoration: underline;
+  }
+}
+
+/* --- Minimum Touch Target Size (44x44) --- */
+
+@media (pointer: coarse) {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Add padding to small buttons */
+  .btn-icon {
+    padding: 12px;
+  }
+}
+
+/* --- Responsive Edge Cases --- */
+
+/* Very small screens (320px) */
+@media (max-width: 359px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .sidebar {
+    width: 100%;
+  }
+  
+  /* Stack buttons vertically */
+  .button-group {
+    flex-direction: column;
+  }
+  
+  /* Reduce padding */
+  .modal-content {
+    padding: 1rem;
+  }
+  
+  /* Truncate long text */
+  .truncate-small {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Very large screens (2560px+) */
+@media (min-width: 2560px) {
+  html {
+    font-size: 18px;
+  }
+  
+  .container {
+    max-width: 1920px;
+    margin: 0 auto;
+  }
+}
+
+/* --- Orientation Change Handling --- */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-header {
+    height: auto;
+    min-height: 44px;
+  }
+  
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* --- Print Styles --- */
+
+@media print {
+  /* Hide interactive elements */
+  button,
+  .sidebar,
+  .mobile-nav,
+  .progress-bar {
+    display: none !important;
+  }
+  
+  /* Show job details */
+  .job-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  /* Ensure links are visible */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* --- Motion Preferences --- */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Already handled in Phase 5.2, but adding extra safety */
+  .sr-only {
+    transition: none;
+  }
+  
+  /* Disable all animations */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Loading States for Screen Readers --- */
+
+/* Announce loading state */
+[aria-busy="true"] {
+  position: relative;
+}
+
+[aria-busy="true"]::after {
+  content: "Loading...";
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* --- Live Region Announcements --- */
+
+[aria-live="polite"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+[aria-live="assertive"] {
+  /* Keep visible for toast notifications */
+}
+
+/* ============================================
+   Phase 5.5: Performance Optimization
+   ============================================ */
+
+/* --- GPU-Accelerated Animations --- */
+
+/* Force GPU acceleration for animated elements */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* --- Will-Change Hints for Animated Elements --- */
+
+/* Only apply will-change to elements that will actually animate */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.will-change-both {
+  will-change: transform, opacity;
+}
+
+/* Job cards - optimize for hover interactions */
+.job-card {
+  will-change: transform, border-color;
+  transform: translateZ(0);
+}
+
+/* Modals - optimize for open/close animations */
+.modal-enter,
+.modal-exit {
+  will-change: transform, opacity;
+}
+
+/* Dropdowns - optimize for show/hide */
+.dropdown-enter,
+.dropdown-exit {
+  will-change: transform, opacity;
+}
+
+/* Buttons - optimize for hover/active states */
+.btn-primary,
+.btn-secondary,
+.btn-accept,
+.btn-reject {
+  will-change: transform, box-shadow;
+}
+
+/* Progress bar - optimize for width animations */
+.progress-bar-fill {
+  will-change: width;
+}
+
+/* Skeleton shimmer - optimize for background animation */
+.skeleton {
+  will-change: background-position;
+}
+
+/* --- Virtual Scrolling Container --- */
+
+/* Container for virtualized job list */
+.virtual-list-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  contain: strict;
+}
+
+/* Virtual list item - minimize reflows */
+.virtual-list-item {
+  position: absolute;
+  left: 0;
+  right: 0;
+  contain: layout style paint;
+}
+
+/* --- Content-Visibility for Off-Screen Content --- */
+
+/* Skip rendering off-screen job cards */
+.job-card-container {
+  content-visibility: auto;
+  contain-intrinsic-size: 80px; /* Approximate height of job card */
+}
+
+/* --- Reduced Motion - Enhanced Support --- */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Remove will-change for reduced motion users */
+  .job-card,
+  .modal-enter,
+  .modal-exit,
+  .dropdown-enter,
+  .dropdown-exit,
+  .btn-primary,
+  .btn-secondary,
+  .btn-accept,
+  .btn-reject,
+  .progress-bar-fill,
+  .skeleton {
+    will-change: auto;
+  }
+  
+  /* Use simple opacity transitions instead of transforms */
+  .job-card:hover {
+    transform: none;
+    opacity: 0.9;
+  }
+  
+  /* Disable skeleton shimmer */
+  .skeleton {
+    animation: none;
+    background: var(--bg-tertiary);
+  }
+  
+  /* Instant modal transitions */
+  .modal-enter,
+  .modal-exit {
+    animation: none;
+  }
+  
+  /* Instant dropdown transitions */
+  .dropdown-enter,
+  .dropdown-exit {
+    animation: none;
+  }
+}
+
+/* --- Containment for Performance --- */
+
+/* Isolate job list from rest of page */
+.job-list-container {
+  contain: layout style;
+}
+
+/* Isolate sidebar from main content */
+.sidebar-container {
+  contain: layout style;
+}
+
+/* Isolate modals from page content */
+.modal-container {
+  contain: layout style paint;
+}
+
+/* --- Font Display Optimization --- */
+
+/* Prevent FOIT (Flash of Invisible Text) */
+@font-face {
+  font-family: 'Outfit';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-display: swap;
+}
+
+/* --- Scroll Performance --- */
+
+/* Momentum scrolling on iOS */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Prevent scroll chaining on modals */
+.modal-scroll {
+  overscroll-behavior: contain;
+}
+
+/* --- Image/Content Lazy Loading --- */
+
+/* Fade in images when loaded */
+.img-lazy {
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+.img-lazy.loaded {
+  opacity: 1;
+}
+
+/* --- Animation Frame Optimization --- */
+
+/* Use CSS containment for animated lists */
+.animated-list {
+  contain: strict;
+}
+
+/* Batch animations with animation-composition (modern browsers) */
+@supports (animation-composition: replace) {
+  .stagger-children > * {
+    animation-composition: replace;
+  }
+}
+
+/* --- Memory Optimization --- */
+
+/* Remove transitions when not visible */
+.hidden-animated {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Optimize for print - remove all animations */
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+}
