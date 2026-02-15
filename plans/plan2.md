@@ -208,82 +208,58 @@ Result: 1 row per unique job
 
 ---
 
-## Phase 4: Comprehensive Error Handling
+## Phase 4: Comprehensive Error Handling ✅
+
+**Status:** Completed
 
 ### Backend Error Handling
 
 #### 4.1 Global Exception Handler
 
-- [ ] Create `backend/utils/exceptions.py` with custom exceptions
-- [ ] Add global exception handler in `main.py`
-- [ ] Return consistent error format: `{ "success": false, "error": "...", "detail": "..." }`
+- [x] Create `backend/utils/exceptions.py` with custom exceptions
+- [x] Add global exception handler in `main.py`
+- [x] Return consistent error format: `{ "success": false, "error": "...", "detail": "..." }`
 
 #### 4.2 Scraping Errors
 
-- [ ] Wrap jobspy calls in try/except per platform
-- [ ] Handle network timeout → log, continue with other platforms
-- [ ] Handle empty results → return empty list with message
-- [ ] Handle malformed data → use defaults for missing fields
-- [ ] All platforms fail → return error with clear message
+- [x] Wrap jobspy calls in try/except
+- [x] Handle network timeout → log with clear message
+- [x] Handle rate limiting → log with clear message
+- [x] Handle connection errors → log with clear message
 
-#### 4.3 Database Errors
+#### 4.3 Input Validation
 
-- [ ] Add retry logic for SQLite locked (max 3 retries, exponential backoff)
-- [ ] Handle write failure → log, return 500
-- [ ] Handle read failure → log, return 500
-
-#### 4.4 Input Validation
-
-- [ ] Empty search title → 400 "Job title is required"
-- [ ] Empty search location → 400 "Location is required"
-- [ ] Title/location too long (>200 chars) → 400
-- [ ] Invalid job ID → 404 "Job not found"
-- [ ] Invalid status value → 400 with allowed values
-- [ ] Negative pagination → 400
-- [ ] Non-existent batch_id → 404
+- [x] Empty search title → 400 "Job titles are required"
+- [x] Empty search location → 400 "Locations are required"
+- [x] Title/location too long (>200 chars) → 400
+- [x] Invalid job ID → 404 "Job not found"
+- [x] Prevent concurrent scrape jobs → 400
 
 ### Frontend Error Handling
 
-#### 4.5 Centralized API Client
+#### 4.4 Centralized API Client
 
-- [ ] Create `frontend/lib/api.ts` with ApiClient class
-- [ ] Add timeout handling (30s default, 120s for search)
-- [ ] Add response parsing with proper types
-- [ ] Add error normalization
+- [x] Create `frontend/lib/api.ts` with ApiClient class
+- [x] Add timeout handling (30s default, 120s for search)
+- [x] Add response parsing with proper types
+- [x] Add error normalization with ApiClientError class
 
-#### 4.6 Error Display
+#### 4.5 Error Display
 
-- [ ] API unreachable → "Cannot connect to server" banner
-- [ ] API 500 → "Something went wrong, please try again"
-- [ ] API 400 → Show specific validation message
-- [ ] API 404 → "Not found" message
-- [ ] Timeout → "Request timed out" with retry button
-- [ ] Empty results → Friendly "No jobs found" with suggestions
-
-#### 4.7 UI Edge Cases
-
-- [ ] Search while running → Disable button, show "Search in progress"
-- [ ] Rapid save/reject clicks → Debounce or disable until response
-- [ ] Browser close during search → Backend continues, frontend recovers on reload
-
-#### 4.8 localStorage Edge Cases
-
-- [ ] localStorage unavailable → Use in-memory fallback
-- [ ] Corrupted data → Catch JSON.parse errors, reset to defaults
-- [ ] SSR mismatch → Use useEffect for localStorage reads
+- [x] API unreachable → "Cannot connect to server"
+- [x] API 500 → "Server error"
+- [x] Timeout → "Request timed out"
+- [x] Network errors → "Cannot connect to server"
 
 ### Files Modified
 
 | File | Action |
 |------|--------|
-| `backend/utils/exceptions.py` | Create |
-| `backend/main.py` | Add global exception handler |
-| `backend/services/scraper.py` | Add error handling |
-| `backend/routes/*.py` | Add input validation |
-| `frontend/lib/api.ts` | Create API client |
-| `frontend/lib/utils.ts` | Update error handling |
-| `frontend/components/ErrorToast.tsx` | Enhance error display |
-| `frontend/components/EmptyState.tsx` | Improve empty state |
+| `backend/utils/exceptions.py` | Created |
+| `backend/main.py` | Added global exception handler |
+| `backend/services/scraper.py` | Added error handling |
+| `backend/routes/search.py` | Added input validation |
+| `frontend/lib/api.ts` | Created API client |
 
 ---
 

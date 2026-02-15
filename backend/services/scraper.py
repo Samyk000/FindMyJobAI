@@ -154,33 +154,61 @@ class ScraperService:
             log("Starting job scrape...")
             
             # Use the incremental scraping function
-            stats = scrape_jobs_incremental(
-                sites=cfg_snapshot["sites"],
-                titles_csv=cfg_snapshot["titles"],
-                locations_csv=cfg_snapshot["locations"],
-                country=cfg_snapshot["country"],
-                include_keywords_csv=cfg_snapshot["include_keywords"],
-                exclude_keywords_csv=cfg_snapshot["exclude_keywords"],
-                results_per_site=cfg_snapshot["results_per_site"],
-                hours_old=cfg_snapshot["hours_old"],
-                data_mode=cfg_snapshot["data_mode"],
-                log=log,
-                on_job_found=save_job_callback,
-                on_progress=progress_callback,
-            )
+            try:
+                stats = scrape_jobs_incremental(
+                    sites=cfg_snapshot["sites"],
+                    titles_csv=cfg_snapshot["titles"],
+                    locations_csv=cfg_snapshot["locations"],
+                    country=cfg_snapshot["country"],
+                    include_keywords_csv=cfg_snapshot["include_keywords"],
+                    exclude_keywords_csv=cfg_snapshot["exclude_keywords"],
+                    results_per_site=cfg_snapshot["results_per_site"],
+                    hours_old=cfg_snapshot["hours_old"],
+                    data_mode=cfg_snapshot["data_mode"],
+                    log=log,
+                    on_job_found=save_job_callback,
+                    on_progress=progress_callback,
+                )
+            except Exception as scrape_error:
+                # Handle scraping-specific errors
+                error_msg = str(scrape_error)
+                logger.error(f"Scraping error: {error_msg}")
+                log(f"Scraping error: {error_msg}")
+                
+                # Check for common error types
+                if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+                    log("Request timed out. Some results may be incomplete.")
+                elif "connection" in error_msg.lower() or "network" in error_msg.lower():
+                    log("Network error. Please check your connection.")
+                elif "rate limit" in error_msg.lower() or "429" in error_msg:
+                    log("Rate limited by job site. Please wait before trying again.")
+                
+                # Still mark as failed but with partial results if any
+                pipeline_manager.update(job_id, state="failed", stats={
+                    "batch_id": batch_id,
+                    "new_jobs": count,
+                    "duplicates": duplicates,
+                    "error": error_msg
+                })
+                return
             
             pipeline_manager.update(job_id, state="done", stats={
                 "batch_id": batch_id,
                 "new_jobs": count,
                 "duplicates": duplicates,
-                "total_scraped": stats.get("raw_total", 0)
+                "total_scraped": stats.get("raw_total", 0) if stats else 0
             })
             log(f"Complete. Added {count} new jobs ({duplicates} duplicates skipped).")
             
         except Exception as e:
-            logger.error(f"Scrape worker failed: {e}")
+            logger.error(f"Scrape worker failed: {e}", exc_info=True)
             pipeline_manager.log(job_id, f"ERROR: {str(e)}")
-            pipeline_manager.update(job_id, state="failed")
+            pipeline_manager.update(job_id, state="failed", stats={
+                "batch_id": batch_id,
+                "new_jobs": count,
+                "duplicates": duplicates,
+                "error": str(e)
+            })
         finally:
             db.close()
     

@@ -12,10 +12,15 @@ from schemas import RunScrapeIn
 from services.pipeline import pipeline_manager
 from services.scraper import ScraperService
 from services.job_service import SettingsService
+from utils.exceptions import ValidationError, NotFoundError
 
 logger = logging.getLogger("job-agent")
 
 router = APIRouter(prefix="", tags=["search"])
+
+# Constants for validation
+MAX_TITLE_LENGTH = 200
+MAX_LOCATION_LENGTH = 200
 
 
 @router.post("/run/scrape")
@@ -42,9 +47,29 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
         
         # Validate required fields
         if not titles or not titles.strip():
-            raise HTTPException(400, "Job titles are required")
+            raise ValidationError("Job titles are required", field="titles")
         if not locations or not locations.strip():
-            raise HTTPException(400, "Locations are required")
+            raise ValidationError("Locations are required", field="locations")
+        
+        # Validate field lengths
+        if len(titles) > MAX_TITLE_LENGTH:
+            raise ValidationError(
+                f"Job titles must be less than {MAX_TITLE_LENGTH} characters",
+                field="titles"
+            )
+        if len(locations) > MAX_LOCATION_LENGTH:
+            raise ValidationError(
+                f"Locations must be less than {MAX_LOCATION_LENGTH} characters",
+                field="locations"
+            )
+        
+        # Check if a scrape is already running
+        running_jobs = pipeline_manager.get_all_running()
+        if running_jobs:
+            raise ValidationError(
+                "A scrape job is already running. Please wait for it to complete.",
+                detail="Only one scrape job can run at a time"
+            )
         
         # Update settings with ephemeral values
         cfg.titles = titles
@@ -68,7 +93,7 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
             "batch_id": batch_id,
             "message": "Scrape job started"
         }
-    except HTTPException:
+    except (ValidationError, NotFoundError):
         raise
     except Exception as e:
         logger.error(f"Failed to start scrape: {e}")
@@ -89,9 +114,13 @@ def get_logs(job_id: str):
     try:
         pipeline = pipeline_manager.get(job_id)
         if not pipeline:
-            raise HTTPException(404, "Pipeline not found or expired")
+            raise NotFoundError(
+                "Pipeline not found or expired",
+                resource_type="Pipeline",
+                resource_id=job_id
+            )
         return pipeline
-    except HTTPException:
+    except NotFoundError:
         raise
     except Exception as e:
         logger.error(f"Failed to get logs for {job_id}: {e}")

@@ -5,9 +5,11 @@ This is the main entry point for the Job Bot API.
 It sets up the FastAPI application, configures middleware, and includes routers.
 """
 import logging
+import traceback
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +20,9 @@ from database import init_db
 
 # Import routers
 from routes import jobs_router, search_router, settings_router
+
+# Import custom exceptions
+from utils.exceptions import JobBotError, ValidationError, NotFoundError
 
 # --- APP SETUP ---
 app = FastAPI(
@@ -33,6 +38,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- GLOBAL EXCEPTION HANDLERS ---
+@app.exception_handler(JobBotError)
+async def jobbot_error_handler(request: Request, exc: JobBotError):
+    """Handle all custom Job Bot errors."""
+    logger.error(f"JobBotError: {exc.message} - {exc.detail}")
+    return JSONResponse(
+        status_code=400 if isinstance(exc, ValidationError) else 404 if isinstance(exc, NotFoundError) else 500,
+        content=exc.to_dict()
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle all unhandled exceptions."""
+    logger.error(f"Unhandled exception: {str(exc)}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "Internal server error",
+            "code": "INTERNAL_ERROR",
+            "detail": str(exc) if logging.DEBUG >= logging.root.level else "An unexpected error occurred"
+        }
+    )
 
 
 # --- STARTUP EVENT ---
