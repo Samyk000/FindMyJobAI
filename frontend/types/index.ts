@@ -9,8 +9,6 @@ export type JobRow = {
   date_posted: string;
   source_site: string;
   status: "new" | "saved" | "rejected";
-  scored: boolean;
-  score: number | null;
   batch_id: string;
   fetched_at: string;
 };
@@ -25,7 +23,6 @@ export type SettingsModel = {
   sites: string[];
   results_per_site: number;
   hours_old: number;
-  candidate_profile: string;
   connected: boolean;
 };
 
@@ -40,7 +37,6 @@ export type SearchTab = {
     country: string;
     keywordsInc: string;
     keywordsExc: string;
-    profile: string;
   };
 };
 

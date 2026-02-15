@@ -5,7 +5,6 @@ import {
   Search,
   MapPin,
   ChevronDown,
-  FileText,
   Linkedin,
   Briefcase,
   Globe,
@@ -34,15 +33,12 @@ type MobileNavProps = {
   setInputLimit: (v: number) => void;
   inputHours: number;
   setInputHours: (v: number) => void;
-  inputProfile: string;
-  setInputProfile: (v: string) => void;
   inputKeywordsInc: string;
   setInputKeywordsInc: (v: string) => void;
   inputKeywordsExc: string;
   setInputKeywordsExc: (v: string) => void;
   // Actions
   onFetch: () => void;
-  onOpenProfile: () => void;
   // State
   isFetching: boolean;
   showMoreOptions: boolean;
@@ -68,14 +64,11 @@ export default function MobileNav({
   setInputLimit,
   inputHours,
   setInputHours,
-  inputProfile,
-  setInputProfile,
   inputKeywordsInc,
   setInputKeywordsInc,
   inputKeywordsExc,
   setInputKeywordsExc,
   onFetch,
-  onOpenProfile,
   isFetching,
   showMoreOptions,
   setShowMoreOptions,
@@ -375,18 +368,8 @@ export default function MobileNav({
             </div>
           </div>
 
-          {/* Search Settings - Row 2: Profile and Filter */}
+          {/* Search Settings - Row 2: Filter */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenProfile}
-              className={`flex-1 py-2 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                isDark
-                  ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-teal-400 hover:border-zinc-600"
-                  : "bg-gray-50 border-gray-300 text-gray-500 hover:text-teal-600 hover:border-gray-400"
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" /> Profile
-            </button>
             <button
               onClick={() => setShowMoreOptions(!showMoreOptions)}
               className={`flex-1 py-2 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${

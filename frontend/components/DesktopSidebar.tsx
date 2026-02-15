@@ -6,7 +6,6 @@ import {
   MapPin, 
   ChevronDown, 
   ChevronUp,
-  FileText,
   Settings2,
   Filter,
   Briefcase,
@@ -29,15 +28,12 @@ interface DesktopSidebarProps {
   setInputLimit: (value: number) => void;
   inputHours: number;
   setInputHours: (value: number) => void;
-  inputProfile: string;
-  setInputProfile: (value: string) => void;
   inputKeywordsInc: string;
   setInputKeywordsInc: (value: string) => void;
   inputKeywordsExc: string;
   setInputKeywordsExc: (value: string) => void;
   showMoreOptions: boolean;
   setShowMoreOptions: (value: boolean) => void;
-  onOpenProfile: () => void;
 }
 
 export default function DesktopSidebar({
@@ -59,8 +55,7 @@ export default function DesktopSidebar({
   inputKeywordsExc,
   setInputKeywordsExc,
   showMoreOptions,
-  setShowMoreOptions,
-  onOpenProfile
+  setShowMoreOptions
 }: DesktopSidebarProps) {
   return (
     <aside className={`hidden lg:flex w-80 border-r flex-col flex-shrink-0 z-20 ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-gray-50 border-gray-200'}`}>
@@ -185,15 +180,6 @@ export default function DesktopSidebar({
         </div>
 
         <div className="space-y-2 pt-2">
-          <button 
-            onClick={onOpenProfile} 
-            aria-label="Edit candidate profile"
-            className={`w-full flex items-center justify-between p-3 border rounded-lg transition-colors text-xs font-bold group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'bg-black border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white' : 'bg-white border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-900'}`}
-          >
-            <span className="flex items-center gap-2"><FileText className="w-3 h-3 group-hover:text-teal-500" /> Candidate Profile</span>
-            <Settings2 className="w-3 h-3" />
-          </button>
-
           <div className={`border rounded-lg overflow-hidden ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-gray-300'}`}>
             <button 
               onClick={() => setShowMoreOptions(!showMoreOptions)} 

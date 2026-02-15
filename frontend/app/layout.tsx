@@ -24,10 +24,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FindMyJobAI - AI-Powered Job Search",
-  description: "Discover your dream job with AI-powered search and matching. Scrape jobs from LinkedIn, Indeed, Glassdoor and more.",
-  keywords: ["job search", "job scraper", "AI job matching", "LinkedIn jobs", "Indeed jobs", "career", "employment"],
-  authors: [{ name: "FindMyJobAI" }],
+  title: "FindMyJob - Job Search Aggregator",
+  description: "Discover your dream job with powerful search aggregation. Scrape jobs from LinkedIn, Indeed, Glassdoor and more.",
+  keywords: ["job search", "job scraper", "LinkedIn jobs", "Indeed jobs", "career", "employment"],
+  authors: [{ name: "FindMyJob" }],
   icons: {
     icon: "/favicon.ico",
   },

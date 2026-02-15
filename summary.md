@@ -1,7 +1,7 @@
-# FindMyJobAI - Project Summary
+# FindMyJob - Project Summary
 
 ## Overview
-A job search aggregation application that scrapes jobs from LinkedIn, Indeed, and Glassdoor, with AI-powered job matching capabilities. Built with a FastAPI backend and Next.js frontend.
+A job search aggregation application that scrapes jobs from LinkedIn, Indeed, and Glassdoor. Built with a FastAPI backend and Next.js frontend.
 
 ---
 
@@ -11,13 +11,12 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 - **Framework**: FastAPI with SQLAlchemy ORM
 - **Database**: SQLite (`jobs.db`)
 - **Job Scraping**: `python-jobspy` library
-- **AI Integration**: OpenRouter API for job scoring
 
 ### Key Files
 | File | Purpose |
 |------|---------|
 | [`main.py`](backend/main.py) | FastAPI app, API routes, background workers |
-| [`job_bot.py`](backend/job_bot.py) | Scraping logic, AI scoring functions |
+| [`job_bot.py`](backend/job_bot.py) | Scraping logic |
 | [`requirements.txt`](backend/requirements.txt) | Python dependencies |
 | [`middleware/rate_limit.py`](backend/middleware/rate_limit.py) | Empty - not implemented |
 
@@ -29,19 +28,18 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 - `GET/PATCH/DELETE /jobs/{id}` - Single job operations
 - `DELETE /jobs/clear-all` - Clear all jobs
 - `POST /run/scrape` - Start scraping pipeline
-- `POST /run/score` - Start AI scoring pipeline
 - `GET /logs/{job_id}` - Pipeline status/logs
 - `GET /stats` - Job statistics
 
 ### Data Models
-- **JobDB**: id, title, company, location, job_url, description, is_remote, date_posted, source_site, status, score, scored, batch_id, fetched_at
-- **SettingsDB**: API key, titles, locations, country, keywords, sites, results_per_site, hours_old, candidate_profile
+- **JobDB**: id, title, company, location, job_url, description, is_remote, date_posted, source_site, status, batch_id, fetched_at
+- **SettingsDB**: API key, titles, locations, country, keywords, sites, results_per_site, hours_old
 
 ### Supported Sites
 - LinkedIn
 - Indeed
 - Glassdoor
-- Zip Recruiter ⚠️ (marked for removal)
+- Zip Recruiter (marked for removal)
 
 ---
 
@@ -70,7 +68,6 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 | [`components/ProgressBar.tsx`](frontend/components/ProgressBar.tsx) | Scraping progress indicator |
 | [`components/ErrorToast.tsx`](frontend/components/ErrorToast.tsx) | Error notification |
 | [`components/LoadingScreen.tsx`](frontend/components/LoadingScreen.tsx) | Initial loading screen |
-| [`components/ProfileModal.tsx`](frontend/components/ProfileModal.tsx) | Candidate profile editor |
 | [`components/SettingsModal.tsx`](frontend/components/SettingsModal.tsx) | App settings modal |
 | [`components/ClearConfirmModal.tsx`](frontend/components/ClearConfirmModal.tsx) | Data clear confirmation |
 
@@ -81,7 +78,6 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 - Mobile-responsive design with drawer navigation
 - Job status management (new/saved/rejected)
 - Filter by portal and location
-- AI-powered job matching (requires OpenRouter API key)
 
 ---
 
@@ -94,10 +90,10 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 4. **Error Handling** - Some endpoints lack detailed error messages
 
 ### Frontend Issues
-1. ✅ **Large Component** - [`page.tsx`](frontend/app/page.tsx) refactored from ~2000 lines to ~470 lines
-2. ✅ **Debug Logs** - Console logs (`🐰`) removed from production code
-3. ✅ **Backup File** - [`page.tsx.backup`](frontend/app/page.tsx.backup) removed
-4. ✅ **Duplicate Constants** - `SUPPORTED_COUNTRIES` and `JOB_PLATFORMS` now centralized in [`lib/constants.ts`](frontend/lib/constants.ts)
+1. ~~**Large Component** - [`page.tsx`](frontend/app/page.tsx) refactored from ~2000 lines to ~470 lines~~
+2. ~~**Debug Logs** - Console logs (` Bunny`) removed from production code~~
+3. ~~**Backup File** - [`page.tsx.backup`](frontend/app/page.tsx.backup) removed~~
+4. ~~**Duplicate Constants** - `SUPPORTED_COUNTRIES` and `JOB_PLATFORMS` now centralized in [`lib/constants.ts`](frontend/lib/constants.ts)~~
 
 ### General Issues
 1. **No Tests** - Missing test coverage for both frontend and backend
@@ -137,7 +133,7 @@ flowchart TD
 
 ### Backend Environment Variables
 ```
-OPENROUTER_API_KEY=your_api_key
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
 ```
 
 ### Frontend Environment Variables
@@ -164,6 +160,27 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+## Recent Changes
+
+### AI Code Removal (2026-02-15)
+- Removed `score_jobs()` function from `job_bot.py`
+- Removed `/run/score` endpoint and `_score_worker` from `main.py`
+- Removed `score` and `scored` columns from JobDB model
+- Removed `model` and `candidate_profile` from SettingsDB model
+- Removed `SUPPORTED_MODELS` constant and `/api/models` endpoint
+- Removed score-related filters from `/jobs/search`
+- Removed `scored_count` from `/stats` endpoint
+- Removed `openai` from `requirements.txt`
+- Updated `.env.example` to remove AI-related config
+- Deleted `ProfileModal.tsx` component
+- Removed `score`/`scored` from `JobRow` type
+- Removed `candidate_profile` from `SettingsModel` type
+- Updated app title from "FindMyJobAI" to "FindMyJob"
+- Removed profile-related state and handlers from `page.tsx`
+- Removed profile props from `DesktopSidebar.tsx` and `MobileNav.tsx`
 
 ---
 

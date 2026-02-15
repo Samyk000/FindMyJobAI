@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean, create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from job_bot import scrape_jobs_incremental, score_jobs
+from job_bot import scrape_jobs_incremental
 
 # --- LOGGING ---
 logging.basicConfig(level=logging.INFO)
@@ -42,8 +42,6 @@ class JobDB(Base):
     search_title = Column(String, default="")
     search_location = Column(String, default="")
     status = Column(String, default="new")
-    score = Column(Integer, nullable=True)
-    scored = Column(Boolean, default=False)
     batch_id = Column(String, default="")
     fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -63,8 +61,6 @@ class SettingsDB(Base):
     results_per_site = Column(Integer, default=20)
     hours_old = Column(Integer, default=72)
     data_mode = Column(String, default="compact")
-    model = Column(String, default="qwen/qwen-2.5-7b-instruct:free")
-    candidate_profile = Column(Text, default="")
 
 
 Base.metadata.create_all(bind=engine)
@@ -79,11 +75,6 @@ SUPPORTED_COUNTRIES = [
     {"code": "australia", "name": "Australia"},
 ]
 
-SUPPORTED_MODELS = [
-    "qwen/qwen-2.5-7b-instruct:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-]
-
 SUPPORTED_SITES = ["linkedin", "indeed", "glassdoor", "zip_recruiter"]
 
 # Pipeline expiration time in seconds (1 hour)
@@ -93,7 +84,7 @@ PIPELINE_EXPIRY_SECONDS = 3600
 # --- APP SETUP ---
 app = FastAPI(
     title="Job Bot Pro API",
-    description="AI-powered job search and matching API",
+    description="Job search and aggregation API",
     version="1.0.0"
 )
 
@@ -125,8 +116,6 @@ class SettingsIn(BaseModel):
     results_per_site: int = 20
     hours_old: int = 72
     data_mode: str = "compact"
-    model: str = "qwen/qwen-2.5-7b-instruct:free"
-    candidate_profile: str = ""
 
     @field_validator('sites')
     @classmethod
@@ -164,20 +153,8 @@ class RunScrapeIn(BaseModel):
     hours_old: Optional[int] = None
 
 
-class RunScoreIn(BaseModel):
-    max_jobs: int = 30
-    batch_id: Optional[str] = None
-
-    @field_validator('max_jobs')
-    @classmethod
-    def validate_max_jobs(cls, v):
-        return max(1, min(v, 100))
-
-
 class JobFilter(BaseModel):
     status: str = "active"
-    scored: str = "all"
-    min_score: int = 0
     limit: int = 50
     offset: int = 0
     batch_id: Optional[str] = None
@@ -311,16 +288,6 @@ def api_countries():
         raise HTTPException(500, "Failed to retrieve countries")
 
 
-@app.get("/api/models")
-def api_models():
-    """Get list of supported AI models."""
-    try:
-        return {"models": SUPPORTED_MODELS}
-    except Exception as e:
-        logger.error(f"Failed to get models: {e}")
-        raise HTTPException(500, "Failed to retrieve models")
-
-
 @app.get("/api/sites")
 def api_sites():
     """Get list of supported job sites."""
@@ -347,7 +314,6 @@ def get_settings(db: Session = Depends(get_db)):
             "sites": [s for s in (cfg.sites or "").split(",") if s],
             "results_per_site": cfg.results_per_site or 20,
             "hours_old": cfg.hours_old or 72,
-            "candidate_profile": cfg.candidate_profile or "",
         }
     except HTTPException:
         raise
@@ -369,7 +335,6 @@ def save_settings(payload: SettingsIn, db: Session = Depends(get_db)):
         cfg.sites = ",".join(payload.sites)
         cfg.results_per_site = payload.results_per_site
         cfg.hours_old = payload.hours_old
-        cfg.candidate_profile = payload.candidate_profile
         db.commit()
         return {"ok": True, "message": "Settings saved successfully"}
     except HTTPException:
@@ -437,12 +402,6 @@ def jobs_search(f: JobFilter, db: Session = Depends(get_db)):
             q = q.filter(JobDB.source_site == f.source_site)
         if f.location:
             q = q.filter(JobDB.location.ilike(f"%{f.location}%"))
-        if f.scored == "yes":
-            q = q.filter(JobDB.scored == True)
-        elif f.scored == "no":
-            q = q.filter(JobDB.scored == False)
-        if f.min_score > 0:
-            q = q.filter(JobDB.score >= f.min_score)
         
         # Ordering and pagination
         q = q.order_by(JobDB.fetched_at.desc())
@@ -461,8 +420,6 @@ def jobs_search(f: JobFilter, db: Session = Depends(get_db)):
                 "date_posted": j.date_posted or "",
                 "source_site": j.source_site or "",
                 "status": j.status or "new",
-                "scored": bool(j.scored),
-                "score": j.score,
                 "batch_id": j.batch_id or "",
                 "fetched_at": str(j.fetched_at) if j.fetched_at else "",
             })
@@ -491,8 +448,6 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
             "date_posted": j.date_posted or "",
             "source_site": j.source_site or "",
             "status": j.status or "new",
-            "scored": bool(j.scored),
-            "score": j.score,
             "batch_id": j.batch_id or "",
             "fetched_at": str(j.fetched_at) if j.fetched_at else "",
         }
@@ -561,7 +516,6 @@ def clear_all_jobs(reset_settings: bool = False, db: Session = Depends(get_db)):
             cfg.sites = "linkedin"
             cfg.results_per_site = 20
             cfg.hours_old = 72
-            cfg.candidate_profile = ""
             settings_reset = True
         
         db.commit()
@@ -704,70 +658,6 @@ def _scrape_worker(job_id: str, cfg_snapshot: Dict[str, Any], batch_id: str):
         db.close()
 
 
-def _score_worker(job_id: str, cfg_snapshot: Dict[str, Any], job_ids: List[str]):
-    """Background worker for scoring jobs."""
-    db = SessionLocal()
-    try:
-        def log(msg: str):
-            pipeline_manager.log(job_id, msg)
-            logger.info(f"[{job_id}] {msg}")
-        
-        log(f"Starting AI scoring for {len(job_ids)} jobs...")
-        
-        # Fetch jobs to score
-        jobs_to_score = db.query(JobDB).filter(JobDB.id.in_(job_ids)).all()
-        if not jobs_to_score:
-            log("No jobs found to score.")
-            pipeline_manager.update(job_id, state="done", stats={"scored": 0})
-            return
-        
-        # Prepare job data for scoring
-        job_data = []
-        for j in jobs_to_score:
-            job_data.append({
-                "id": j.id,
-                "title": j.title,
-                "company": j.company,
-                "location": j.location,
-                "is_remote": j.is_remote,
-                "description": j.description,
-            })
-        
-        # Call scoring function
-        scored_results, requests_used = score_jobs(
-            api_key=cfg_snapshot["api_key"],
-            model=cfg_snapshot["model"],
-            candidate_profile=cfg_snapshot["candidate_profile"],
-            jobs=job_data,
-            batch_size=8,
-            log=log
-        )
-        
-        # Update jobs with scores
-        scored_count = 0
-        for jid, score in scored_results:
-            job = db.query(JobDB).filter(JobDB.id == jid).first()
-            if job:
-                job.score = score
-                job.scored = True
-                scored_count += 1
-        
-        db.commit()
-        
-        pipeline_manager.update(job_id, state="done", stats={
-            "scored": scored_count,
-            "api_requests": requests_used
-        })
-        log(f"Complete. Scored {scored_count} jobs using {requests_used} API requests.")
-        
-    except Exception as e:
-        logger.error(f"Score worker failed: {e}")
-        pipeline_manager.log(job_id, f"ERROR: {str(e)}")
-        pipeline_manager.update(job_id, state="failed")
-    finally:
-        db.close()
-
-
 # --- PIPELINE ENDPOINTS ---
 
 @app.post("/run/scrape")
@@ -825,54 +715,6 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
         raise HTTPException(500, f"Failed to start scrape: {str(e)}")
 
 
-@app.post("/run/score")
-def run_score(payload: RunScoreIn, bg: BackgroundTasks, db: Session = Depends(get_db)):
-    """Start an AI scoring pipeline."""
-    try:
-        cfg = _get_or_create_settings(db)
-        
-        # Validate API key
-        if not cfg.api_key or not cfg.connected:
-            raise HTTPException(400, "API key required. Please connect your OpenRouter API key first.")
-        
-        # Validate candidate profile
-        if not cfg.candidate_profile or not cfg.candidate_profile.strip():
-            raise HTTPException(400, "Candidate profile required. Please add your profile before scoring.")
-        
-        # Find jobs to score
-        q = db.query(JobDB).filter(JobDB.scored == False, JobDB.status == "new")
-        if payload.batch_id:
-            q = q.filter(JobDB.batch_id == payload.batch_id)
-        
-        jobs_to_score = q.limit(payload.max_jobs).all()
-        if not jobs_to_score:
-            raise HTTPException(404, "No unscored jobs found")
-        
-        job_ids = [j.id for j in jobs_to_score]
-        
-        # Prepare config snapshot
-        snapshot = {
-            "api_key": cfg.api_key,
-            "model": cfg.model or "qwen/qwen-2.5-7b-instruct:free",
-            "candidate_profile": cfg.candidate_profile
-        }
-        
-        # Create pipeline and start worker
-        job_id = pipeline_manager.create("score")
-        bg.add_task(_score_worker, job_id, snapshot, job_ids)
-        
-        return {
-            "job_id": job_id,
-            "jobs_queued": len(job_ids),
-            "message": "Scoring job started"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to start scoring: {e}")
-        raise HTTPException(500, f"Failed to start scoring: {str(e)}")
-
-
 # --- STATS ENDPOINT ---
 
 @app.get("/stats")
@@ -883,14 +725,12 @@ def get_stats(db: Session = Depends(get_db)):
         new_count = db.query(JobDB).filter(JobDB.status == "new").count()
         saved_count = db.query(JobDB).filter(JobDB.status == "saved").count()
         rejected_count = db.query(JobDB).filter(JobDB.status == "rejected").count()
-        scored_count = db.query(JobDB).filter(JobDB.scored == True).count()
         
         return {
             "total": total,
             "new": new_count,
             "saved": saved_count,
             "rejected": rejected_count,
-            "scored": scored_count,
         }
     except Exception as e:
         logger.error(f"Failed to get stats: {e}")

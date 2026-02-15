@@ -27,8 +27,6 @@ export type JobRow = {
   date_posted: string;
   source_site: string;
   status: "new" | "saved" | "rejected";
-  scored: boolean;
-  score: number | null;
   batch_id: string;
   fetched_at: string;
 };

@@ -26,7 +26,6 @@ const ProgressBar = dynamic(() => import("../components/ProgressBar"), { ssr: fa
 // Static imports for components used in every render
 import ErrorToast from "../components/ErrorToast";
 import LoadingScreen from "../components/LoadingScreen";
-import ProfileModal from "../components/ProfileModal";
 import SettingsModal from "../components/SettingsModal";
 import ClearConfirmModal from "../components/ClearConfirmModal";
 import DesktopSidebar from "../components/DesktopSidebar";
@@ -58,7 +57,6 @@ export default function Page() {
   const [inputSites, setInputSites] = useState<string[]>([]);
   const [inputLimit, setInputLimit] = useState(20);
   const [inputHours, setInputHours] = useState(72);
-  const [inputProfile, setInputProfile] = useState("");
   const [inputKeywordsInc, setInputKeywordsInc] = useState("");
   const [inputKeywordsExc, setInputKeywordsExc] = useState("");
 
@@ -67,7 +65,6 @@ export default function Page() {
   const [portalDropdownOpen, setPortalDropdownOpen] = useState(false);
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
 
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [viewStatus, setViewStatus] = useState<"new" | "saved" | "rejected">("new");
 
@@ -125,8 +122,6 @@ export default function Page() {
           setShowClearConfirmModal(false);
         } else if (showSettingsModal) {
           setShowSettingsModal(false);
-        } else if (showProfileModal) {
-          setShowProfileModal(false);
         } else if (isMobileMenuOpen) {
           setIsMobileMenuOpen(false);
         } else if (portalDropdownOpen) {
@@ -139,7 +134,7 @@ export default function Page() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showClearConfirmModal, showSettingsModal, showProfileModal, isMobileMenuOpen, portalDropdownOpen, locationDropdownOpen]);
+  }, [showClearConfirmModal, showSettingsModal, isMobileMenuOpen, portalDropdownOpen, locationDropdownOpen]);
 
   // Sync inputs with active tab
   useEffect(() => {
@@ -150,7 +145,6 @@ export default function Page() {
       setInputCountry(tab.query.country || "india");
       setInputKeywordsInc(tab.query.keywordsInc || "");
       setInputKeywordsExc(tab.query.keywordsExc || "");
-      if (tab.query.profile) setInputProfile(tab.query.profile);
     } else if (tab?.type === 'new') {
       setInputTitle("");
       setInputLocation("");
@@ -214,7 +208,6 @@ export default function Page() {
     setInputSites(validSites.length > 0 ? validSites : []);
     setInputLimit(settings.results_per_site || 20);
     setInputHours(settings.hours_old || 72);
-    setInputProfile(settings.candidate_profile || "");
     setInputKeywordsInc(settings.include_keywords || "");
     setInputKeywordsExc(settings.exclude_keywords || "");
     setInputCountry(settings.country || "india");
@@ -302,7 +295,6 @@ export default function Page() {
       setInputLocation("");
       setInputKeywordsInc("");
       setInputKeywordsExc("");
-      setInputProfile("");
       setPipeline(null);
       setPipelineJobId("");
       setCurrentBatchId(null);
@@ -345,8 +337,7 @@ export default function Page() {
               location: inputLocation,
               country: inputCountry,
               keywordsInc: inputKeywordsInc,
-              keywordsExc: inputKeywordsExc,
-              profile: inputProfile
+              keywordsExc: inputKeywordsExc
             }
           };
         }
@@ -362,7 +353,7 @@ export default function Page() {
         body: JSON.stringify({
           titles: inputTitle, locations: inputLocation, country: inputCountry,
           sites: inputSites, results_per_site: inputLimit, hours_old: inputHours,
-          candidate_profile: inputProfile, include_keywords: inputKeywordsInc, exclude_keywords: inputKeywordsExc
+          include_keywords: inputKeywordsInc, exclude_keywords: inputKeywordsExc
         }),
       });
       setPipeline({ 
@@ -423,19 +414,6 @@ export default function Page() {
     setJobs(jobs.filter(j => j.id !== id));
     try { await fetchWithErrorCallback(`${BACKEND}/jobs/${id}`, { method: "DELETE" }); }
     catch (err) { setJobs(old); setError(err instanceof Error ? err.message : 'Delete failed'); }
-  }
-
-  async function saveProfile() {
-    setActionLoading('profile');
-    try {
-      await fetchWithErrorCallback(`${BACKEND}/settings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...settings, candidate_profile: inputProfile }),
-      });
-      setShowProfileModal(false);
-    } catch (err) { setError(err instanceof Error ? err.message : 'Save failed'); }
-    finally { setActionLoading(null); }
   }
 
   // -- FILTER LOGIC --
@@ -519,14 +497,11 @@ export default function Page() {
         setInputLimit={setInputLimit}
         inputHours={inputHours}
         setInputHours={setInputHours}
-        inputProfile={inputProfile}
-        setInputProfile={setInputProfile}
         inputKeywordsInc={inputKeywordsInc}
         setInputKeywordsInc={setInputKeywordsInc}
         inputKeywordsExc={inputKeywordsExc}
         setInputKeywordsExc={setInputKeywordsExc}
         onFetch={runScrape}
-        onOpenProfile={() => setShowProfileModal(true)}
         isFetching={pipeline?.state === 'running' || actionLoading === 'scrape'}
         showMoreOptions={showMoreOptions}
         setShowMoreOptions={setShowMoreOptions}
@@ -556,15 +531,12 @@ export default function Page() {
         setInputLimit={setInputLimit}
         inputHours={inputHours}
         setInputHours={setInputHours}
-        inputProfile={inputProfile}
-        setInputProfile={setInputProfile}
         inputKeywordsInc={inputKeywordsInc}
         setInputKeywordsInc={setInputKeywordsInc}
         inputKeywordsExc={inputKeywordsExc}
         setInputKeywordsExc={setInputKeywordsExc}
         showMoreOptions={showMoreOptions}
         setShowMoreOptions={setShowMoreOptions}
-        onOpenProfile={() => setShowProfileModal(true)}
       />
 
       {/* --- MAIN AREA --- */}
@@ -647,17 +619,6 @@ export default function Page() {
           isDark={isDark}
         />
       )}
-
-      {/* --- PROFILE MODAL --- */}
-      <ProfileModal
-        isOpen={showProfileModal}
-        isDark={isDark}
-        inputProfile={inputProfile}
-        setInputProfile={setInputProfile}
-        onClose={() => setShowProfileModal(false)}
-        onSave={saveProfile}
-        isLoading={actionLoading === 'profile'}
-      />
 
       {/* --- SETTINGS MODAL --- */}
       <SettingsModal
