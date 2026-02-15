@@ -36,10 +36,44 @@ def run_migrations():
     """
     Run database migrations.
     Called on application startup.
-    Note: SQLite doesn't support DROP COLUMN, so is_duplicate removal 
-    is handled by migrate_remove_is_duplicate.py script.
+    Adds missing columns to existing tables.
     """
-    pass
+    try:
+        with engine.connect() as conn:
+            # Check and add created_at/updated_at columns to jobs table
+            result = conn.execute(text("PRAGMA table_info(jobs)"))
+            jobs_columns = [row[1] for row in result.fetchall()]
+            
+            if 'created_at' not in jobs_columns:
+                logger.info("Adding created_at column to jobs table...")
+                conn.execute(text("ALTER TABLE jobs ADD COLUMN created_at TEXT"))
+                conn.commit()
+                logger.info("Migration complete: created_at column added to jobs")
+            
+            if 'updated_at' not in jobs_columns:
+                logger.info("Adding updated_at column to jobs table...")
+                conn.execute(text("ALTER TABLE jobs ADD COLUMN updated_at TEXT"))
+                conn.commit()
+                logger.info("Migration complete: updated_at column added to jobs")
+            
+            # Check and add created_at/updated_at columns to settings table
+            result = conn.execute(text("PRAGMA table_info(settings)"))
+            settings_columns = [row[1] for row in result.fetchall()]
+            
+            if 'created_at' not in settings_columns:
+                logger.info("Adding created_at column to settings table...")
+                conn.execute(text("ALTER TABLE settings ADD COLUMN created_at TEXT"))
+                conn.commit()
+                logger.info("Migration complete: created_at column added to settings")
+            
+            if 'updated_at' not in settings_columns:
+                logger.info("Adding updated_at column to settings table...")
+                conn.execute(text("ALTER TABLE settings ADD COLUMN updated_at TEXT"))
+                conn.commit()
+                logger.info("Migration complete: updated_at column added to settings")
+                
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
 
 
 def init_db():
