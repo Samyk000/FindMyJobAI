@@ -14,10 +14,7 @@ from models import JobDB
 from services.pipeline import pipeline_manager
 
 # Import scraping function from job_bot
-try:
-    from job_bot import scrape_jobs_incremental
-except ImportError:
-    from python_jobspy import scrape_jobs_incremental
+from job_bot import scrape_jobs_incremental
 
 logger = logging.getLogger("job-agent")
 
