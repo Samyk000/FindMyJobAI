@@ -91,6 +91,19 @@ class PipelineManager:
         with self._lock:
             return self._pipelines.get(job_id)
     
+    def get_all_running(self) -> list:
+        """
+        Get all currently running pipelines.
+        
+        Returns:
+            List of running pipeline IDs
+        """
+        with self._lock:
+            return [
+                job_id for job_id, pipeline in self._pipelines.items()
+                if pipeline.get("state") == "running"
+            ]
+    
     def _cleanup_expired(self) -> None:
         """
         Remove pipelines older than PIPELINE_EXPIRY_SECONDS.
