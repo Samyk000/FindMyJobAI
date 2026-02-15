@@ -474,6 +474,25 @@ Result: 1 row per unique job
 
 ---
 
+## Global Rules (Apply to ALL Phases)
+
+1. **DO NOT** add tests, Docker, or CI/CD — out of scope
+2. **DO NOT** change the core functionality or features
+3. **DO NOT** add new features
+4. **DO NOT** change the UI design/layout
+5. **DO NOT** upgrade major dependencies
+6. **DO NOT** push to GitHub until explicitly asked by the user ⚠️
+7. **DO** preserve all existing API endpoint paths and response shapes
+8. **DO** ensure the app runs successfully after EACH phase
+9. **DO** document every change in plan2.md as you complete each phase
+10. **DO** handle EVERY edge case mentioned above
+11. **DO** follow DRY principle — if you see repeated code, extract it
+12. **DO** follow consistent naming conventions:
+    - Python: snake_case for functions/variables, PascalCase for classes
+    - TypeScript: camelCase for functions/variables, PascalCase for components/types
+
+---
+
 ## Execution Order
 
 1. **Phase 2** - Backend split (foundation for all other changes)
