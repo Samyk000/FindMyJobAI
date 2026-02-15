@@ -28,6 +28,8 @@ class JobDB(Base):
     status = Column(String, default="new")  # new, saved, rejected
     batch_id = Column(String, default="")
     fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f"<JobDB(id={self.id}, title={self.title}, company={self.company})>"
@@ -53,6 +55,8 @@ class SettingsDB(Base):
     results_per_site = Column(Integer, default=20)
     hours_old = Column(Integer, default=72)
     data_mode = Column(String, default="compact")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f"<SettingsDB(key={self.key}, connected={self.connected})>"
