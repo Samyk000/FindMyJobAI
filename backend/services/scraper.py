@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import JobDB
 from services.pipeline import pipeline_manager
+from utils.helpers import normalize_job_url
 
 # Import scraping function from job_bot
 from job_bot import scrape_jobs_incremental
@@ -70,45 +71,58 @@ class ScraperService:
             def save_job_callback(job_data: Dict[str, Any]) -> bool:
                 """
                 Callback to save a single job immediately.
-                Always saves, marks as duplicate if URL exists.
+                Skips duplicate jobs based on normalized URL.
                 
                 Args:
                     job_data: Dictionary containing job information
                     
                 Returns:
-                    True if saved successfully, False otherwise
+                    True if saved successfully, False if skipped or failed
                 """
                 nonlocal count, duplicates
                 try:
-                    # Check if a job with the same URL already exists
-                    existing = db.query(JobDB).filter(
-                        JobDB.job_url == job_data["job_url"]
-                    ).first()
-                    is_dup = existing is not None
+                    # Get and normalize the job URL
+                    raw_url = job_data.get("job_url", "")
+                    normalized_url = normalize_job_url(raw_url)
+                    
+                    # Skip if no valid URL (can't dedupe, but still save)
+                    # Actually, if URL is empty, we should still save the job
+                    if normalized_url:
+                        # Check if a job with the same normalized URL already exists
+                        existing = db.query(JobDB).filter(
+                            JobDB.job_url == normalized_url
+                        ).first()
+                        
+                        if existing:
+                            # Skip this job - it's a duplicate
+                            duplicates += 1
+                            pipeline_manager.update(job_id, stats={
+                                "batch_id": batch_id,
+                                "new_jobs": count,
+                                "duplicates": duplicates
+                            })
+                            return True  # Return True because we handled it (by skipping)
                     
                     # Generate a unique ID for this job entry
                     job_entry_id = str(uuid.uuid4())
                     
                     j = JobDB(
                         id=job_entry_id,
-                        title=job_data["title"],
-                        company=job_data["company"],
-                        location=job_data["location"],
-                        job_url=job_data["job_url"],
-                        description=job_data["description"],
-                        is_remote=job_data["is_remote"],
-                        date_posted=job_data["date_posted"],
-                        source_site=job_data["source_site"],
+                        title=job_data.get("title", ""),
+                        company=job_data.get("company", ""),
+                        location=job_data.get("location", ""),
+                        job_url=normalized_url or raw_url,  # Use normalized URL, or raw if empty
+                        description=job_data.get("description", ""),
+                        is_remote=job_data.get("is_remote", False),
+                        date_posted=job_data.get("date_posted", ""),
+                        source_site=job_data.get("source_site", ""),
                         search_title=cfg_snapshot["titles"],
                         search_location=cfg_snapshot["locations"],
                         batch_id=batch_id,
-                        is_duplicate=is_dup
                     )
                     db.add(j)
                     db.commit()
                     count += 1
-                    if is_dup:
-                        duplicates += 1
                     
                     # Update stats in real-time
                     pipeline_manager.update(job_id, stats={

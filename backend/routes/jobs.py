@@ -71,7 +71,6 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
             "status": j.status or "new",
             "batch_id": j.batch_id or "",
             "fetched_at": str(j.fetched_at) if j.fetched_at else "",
-            "is_duplicate": bool(j.is_duplicate) if hasattr(j, 'is_duplicate') else False,
         }
     except HTTPException:
         raise

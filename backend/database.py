@@ -34,22 +34,12 @@ def get_db():
 
 def run_migrations():
     """
-    Run database migrations to add missing columns.
+    Run database migrations.
     Called on application startup.
+    Note: SQLite doesn't support DROP COLUMN, so is_duplicate removal 
+    is handled by migrate_remove_is_duplicate.py script.
     """
-    try:
-        with engine.connect() as conn:
-            # Check if is_duplicate column exists
-            result = conn.execute(text("PRAGMA table_info(jobs)"))
-            columns = [row[1] for row in result.fetchall()]
-            
-            if 'is_duplicate' not in columns:
-                logger.info("Adding is_duplicate column to jobs table...")
-                conn.execute(text("ALTER TABLE jobs ADD COLUMN is_duplicate BOOLEAN DEFAULT 0"))
-                conn.commit()
-                logger.info("Migration complete: is_duplicate column added")
-    except Exception as e:
-        logger.error(f"Migration error: {e}")
+    pass
 
 
 def init_db():

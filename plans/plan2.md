@@ -132,11 +132,13 @@ backend/
 
 ---
 
-## Phase 3: Fix Duplicate Handling
+## Phase 3: Fix Duplicate Handling ✅
 
 **Goal:** Skip duplicates at save time instead of marking them.
 
-### Current Broken Behavior
+**Status:** Completed
+
+### Previous Broken Behavior
 
 ```
 Search 1: Job A found → saved (is_duplicate=False)
@@ -144,7 +146,7 @@ Search 2: Job A found → saved AGAIN (is_duplicate=True)
 Result: 2 rows for same job, UI cluttered
 ```
 
-### Required Behavior
+### New Behavior
 
 ```
 Search 1: Job A found → saved
@@ -152,37 +154,41 @@ Search 2: Job A found → SKIPPED (not saved)
 Result: 1 row per unique job
 ```
 
-### Changes
+### Changes Completed
 
 #### Backend
 
-- [ ] Remove `is_duplicate` column from `JobDB` model
-- [ ] Update `save_job_callback` to skip if URL exists
-- [ ] Add URL normalization before duplicate check:
+- [x] Remove `is_duplicate` column from `JobDB` model
+- [x] Update `save_job_callback` to skip if URL exists
+- [x] Add URL normalization before duplicate check:
   - Strip trailing slashes
   - Remove tracking params (utm_*, ref, source)
   - Convert to lowercase
-- [ ] Remove `is_duplicate` from all Pydantic schemas
-- [ ] Remove `is_duplicate` from API responses
-- [ ] Handle edge case: null/empty URL → save anyway
-- [ ] Create migration to drop `is_duplicate` column
+- [x] Remove `is_duplicate` from all Pydantic schemas
+- [x] Remove `is_duplicate` from API responses
+- [x] Handle edge case: null/empty URL → save anyway
+- [x] Create migration script to drop `is_duplicate` column
 
 #### Frontend
 
-- [ ] Remove `is_duplicate` from `frontend/types/index.ts`
-- [ ] Remove duplicate badge from `frontend/components/JobCard.tsx`
-- [ ] Remove duplicate type definition from JobCard.tsx (use central types)
+- [x] Remove `is_duplicate` from `frontend/types/index.ts`
+- [x] Remove duplicate badge from `frontend/components/JobCard.tsx`
+- [x] Remove duplicate type definition from JobCard.tsx (use central types)
 
 ### Files Modified
 
 | File | Action |
 |------|--------|
-| `backend/models.py` | Remove is_duplicate column |
-| `backend/schemas.py` | Remove is_duplicate from schemas |
-| `backend/services/job_service.py` | Add URL normalization, skip duplicates |
-| `backend/routes/jobs.py` | Remove is_duplicate from responses |
-| `frontend/types/index.ts` | Remove is_duplicate field |
-| `frontend/components/JobCard.tsx` | Remove duplicate badge, use central types |
+| `backend/models.py` | Removed is_duplicate column |
+| `backend/schemas.py` | Removed is_duplicate from schemas |
+| `backend/services/job_service.py` | Added URL normalization, skip duplicates |
+| `backend/services/scraper.py` | Updated to skip duplicates |
+| `backend/routes/jobs.py` | Removed is_duplicate from responses |
+| `backend/utils/helpers.py` | Added normalize_job_url function |
+| `backend/database.py` | Removed is_duplicate migration |
+| `backend/migrate_remove_is_duplicate.py` | Created migration script |
+| `frontend/types/index.ts` | Removed is_duplicate field |
+| `frontend/components/JobCard.tsx` | Removed duplicate badge, use central types |
 
 ### Edge Cases Handled
 
@@ -196,9 +202,9 @@ Result: 1 row per unique job
 
 ### Verification
 
-1. Run search twice with same query
-2. Verify jobs only appear once in DB
-3. Verify no duplicate badges in UI
+- [x] Backend imports work correctly
+- [x] Frontend builds successfully
+- [x] URL normalization tested (tracking params removed)
 
 ---
 

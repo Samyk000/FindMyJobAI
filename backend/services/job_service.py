@@ -111,7 +111,6 @@ class JobService:
             search_title=search_title,
             search_location=search_location,
             batch_id=batch_id,
-            is_duplicate=False
         )
         
         db.add(job)
@@ -129,10 +128,7 @@ class JobService:
         batch_id: str
     ) -> Dict[str, Any]:
         """
-        Save a job, marking as duplicate if URL already exists.
-        
-        This is the current behavior that saves duplicates with a flag.
-        Will be replaced in Phase 3 with skip behavior.
+        Save a job, skipping if URL already exists.
         
         Args:
             db: Database session
@@ -142,12 +138,16 @@ class JobService:
             batch_id: Batch ID for this scrape operation
             
         Returns:
-            Dictionary with 'job' and 'is_duplicate' keys
+            Dictionary with 'job' (created job or None if duplicate) and 'skipped' (bool)
         """
-        job_url = job_data.get("job_url", "")
+        from utils.helpers import normalize_job_url
         
-        # Check if job already exists
-        is_duplicate = JobService.job_exists_by_url(db, job_url) if job_url else False
+        job_url = job_data.get("job_url", "")
+        normalized_url = normalize_job_url(job_url)
+        
+        # Check if job already exists (skip if so)
+        if normalized_url and JobService.job_exists_by_url(db, normalized_url):
+            return {"job": None, "skipped": True}
         
         # Generate unique ID
         job_id = str(uuid.uuid4())
@@ -158,7 +158,7 @@ class JobService:
             title=job_data.get("title", ""),
             company=job_data.get("company", ""),
             location=job_data.get("location", ""),
-            job_url=job_url,
+            job_url=normalized_url or job_url,
             description=job_data.get("description", ""),
             is_remote=job_data.get("is_remote", False),
             date_posted=job_data.get("date_posted", ""),
@@ -166,14 +166,13 @@ class JobService:
             search_title=search_title,
             search_location=search_location,
             batch_id=batch_id,
-            is_duplicate=is_duplicate
         )
         
         db.add(job)
         db.commit()
         db.refresh(job)
         
-        return {"job": job, "is_duplicate": is_duplicate}
+        return {"job": job, "skipped": False}
     
     @staticmethod
     def update_job_status(db: Session, job_id: str, status: str) -> JobDB:
@@ -305,7 +304,6 @@ class JobService:
                 "status": j.status or "new",
                 "batch_id": j.batch_id or "",
                 "fetched_at": str(j.fetched_at) if j.fetched_at else "",
-                "is_duplicate": bool(j.is_duplicate) if hasattr(j, 'is_duplicate') else False,
             })
         
         return {"jobs": jobs, "total": total, "limit": limit, "offset": offset}

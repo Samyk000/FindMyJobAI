@@ -28,7 +28,6 @@ class JobDB(Base):
     status = Column(String, default="new")  # new, saved, rejected
     batch_id = Column(String, default="")
     fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    is_duplicate = Column(Boolean, default=False)
 
     def __repr__(self):
         return f"<JobDB(id={self.id}, title={self.title}, company={self.company})>"

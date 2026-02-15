@@ -15,22 +15,9 @@ import {
   Globe,
 } from "lucide-react";
 
-// --- TYPES ---
+import { JobRow } from "@/types";
 
-export type JobRow = {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  job_url: string;
-  is_remote: boolean;
-  date_posted: string;
-  source_site: string;
-  status: "new" | "saved" | "rejected";
-  batch_id: string;
-  fetched_at: string;
-  is_duplicate?: boolean;
-};
+// --- TYPES ---
 
 type JobCardProps = {
   job: JobRow;
@@ -154,11 +141,6 @@ const JobCard = memo(function JobCard({
                   Remote
                 </span>
               )}
-              {job.is_duplicate && (
-                <span className="px-1 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[8px] font-bold">
-                  Duplicate
-                </span>
-              )}
             </div>
           </div>
           {/* Action Buttons - Icon only */}
@@ -251,11 +233,6 @@ const JobCard = memo(function JobCard({
             {job.is_remote && (
               <span className="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-500 border border-teal-500/20 text-[9px] font-bold uppercase">
                 Remote
-              </span>
-            )}
-            {job.is_duplicate && (
-              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] font-bold uppercase">
-                Duplicate
               </span>
             )}
           </div>

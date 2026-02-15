@@ -122,7 +122,6 @@ class JobOut(BaseModel):
     status: str
     batch_id: str
     fetched_at: str
-    is_duplicate: bool = False
 
 
 class JobDetailOut(BaseModel):
@@ -139,7 +138,6 @@ class JobDetailOut(BaseModel):
     status: str
     batch_id: str
     fetched_at: str
-    is_duplicate: bool = False
 
 
 class SettingsOut(BaseModel):
