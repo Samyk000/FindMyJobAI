@@ -13,6 +13,7 @@ import {
   Loader2,
   Filter,
 } from "lucide-react";
+import { SUPPORTED_COUNTRIES, JOB_PLATFORMS } from '@/lib/constants';
 
 // --- TYPES ---
 
@@ -50,19 +51,6 @@ type MobileNavProps = {
   jobCount: number;
   viewStatus: 'new' | 'saved' | 'rejected';
 };
-
-const SUPPORTED_COUNTRIES = [
-  { code: "india", name: "India" },
-  { code: "usa", name: "United States" },
-  { code: "uk", name: "United Kingdom" },
-  { code: "canada", name: "Canada" },
-  { code: "australia", name: "Australia" },
-  { code: "germany", name: "Germany" },
-  { code: "france", name: "France" },
-  { code: "netherlands", name: "Netherlands" },
-  { code: "singapore", name: "Singapore" },
-  { code: "uae", name: "UAE" },
-];
 
 export default function MobileNav({
   isOpen,
@@ -293,7 +281,7 @@ export default function MobileNav({
               Platforms
             </label>
             <div className="flex items-center gap-2">
-              {["linkedin", "indeed", "glassdoor", "zip_recruiter"].map(
+              {JOB_PLATFORMS.map(
                 (site) => (
                   <button
                     key={site}

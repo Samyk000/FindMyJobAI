@@ -56,11 +56,23 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 ### Key Files
 | File | Purpose |
 |------|---------|
-| [`app/page.tsx`](frontend/app/page.tsx) | Main application (~2000 lines) |
+| [`app/page.tsx`](frontend/app/page.tsx) | Main application (~470 lines, refactored) |
+| [`types/index.ts`](frontend/types/index.ts) | TypeScript type definitions |
+| [`lib/constants.ts`](frontend/lib/constants.ts) | App constants (countries, platforms, etc.) |
+| [`lib/utils.ts`](frontend/lib/utils.ts) | Utility functions (storage, fetch, debounce) |
 | [`components/JobCard.tsx`](frontend/components/JobCard.tsx) | Job display component |
 | [`components/MobileNav.tsx`](frontend/components/MobileNav.tsx) | Mobile navigation drawer |
+| [`components/DesktopSidebar.tsx`](frontend/components/DesktopSidebar.tsx) | Desktop search sidebar |
+| [`components/TabsBar.tsx`](frontend/components/TabsBar.tsx) | Tab navigation |
+| [`components/FilterBar.tsx`](frontend/components/FilterBar.tsx) | Job filters and status tabs |
+| [`components/JobList.tsx`](frontend/components/JobList.tsx) | Job listing with empty states |
 | [`components/EmptyState.tsx`](frontend/components/EmptyState.tsx) | Empty state illustrations |
 | [`components/ProgressBar.tsx`](frontend/components/ProgressBar.tsx) | Scraping progress indicator |
+| [`components/ErrorToast.tsx`](frontend/components/ErrorToast.tsx) | Error notification |
+| [`components/LoadingScreen.tsx`](frontend/components/LoadingScreen.tsx) | Initial loading screen |
+| [`components/ProfileModal.tsx`](frontend/components/ProfileModal.tsx) | Candidate profile editor |
+| [`components/SettingsModal.tsx`](frontend/components/SettingsModal.tsx) | App settings modal |
+| [`components/ClearConfirmModal.tsx`](frontend/components/ClearConfirmModal.tsx) | Data clear confirmation |
 
 ### Features
 - Tab-based search management with localStorage persistence
@@ -82,10 +94,10 @@ A job search aggregation application that scrapes jobs from LinkedIn, Indeed, an
 4. **Error Handling** - Some endpoints lack detailed error messages
 
 ### Frontend Issues
-1. **Large Component** - [`page.tsx`](frontend/app/page.tsx) is ~2000 lines, needs refactoring
-2. **Debug Logs** - Console logs (`🐰`) left in production code
-3. **Backup File** - [`page.tsx.backup`](frontend/app/page.tsx.backup) should be removed
-4. **Duplicate Constants** - `SUPPORTED_COUNTRIES` defined in multiple files
+1. ✅ **Large Component** - [`page.tsx`](frontend/app/page.tsx) refactored from ~2000 lines to ~470 lines
+2. ✅ **Debug Logs** - Console logs (`🐰`) removed from production code
+3. ✅ **Backup File** - [`page.tsx.backup`](frontend/app/page.tsx.backup) removed
+4. ✅ **Duplicate Constants** - `SUPPORTED_COUNTRIES` and `JOB_PLATFORMS` now centralized in [`lib/constants.ts`](frontend/lib/constants.ts)
 
 ### General Issues
 1. **No Tests** - Missing test coverage for both frontend and backend
