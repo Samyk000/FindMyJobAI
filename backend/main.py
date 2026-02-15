@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean, create_engine
+from sqlalchemy import Column, DateTime, Integer, String, Text, Boolean, create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from job_bot import scrape_jobs_incremental
@@ -44,6 +44,7 @@ class JobDB(Base):
     status = Column(String, default="new")
     batch_id = Column(String, default="")
     fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    is_duplicate = Column(Boolean, default=False)
 
 
 class SettingsDB(Base):
@@ -57,7 +58,7 @@ class SettingsDB(Base):
     country = Column(String, default="india")
     include_keywords = Column(String, default="")
     exclude_keywords = Column(String, default="")
-    sites = Column(String, default="linkedin,indeed,glassdoor,zip_recruiter")
+    sites = Column(String, default="linkedin,indeed,glassdoor")
     results_per_site = Column(Integer, default=20)
     hours_old = Column(Integer, default=72)
     data_mode = Column(String, default="compact")
@@ -75,7 +76,7 @@ SUPPORTED_COUNTRIES = [
     {"code": "australia", "name": "Australia"},
 ]
 
-SUPPORTED_SITES = ["linkedin", "indeed", "glassdoor", "zip_recruiter"]
+SUPPORTED_SITES = ["linkedin", "indeed", "glassdoor"]
 
 # Pipeline expiration time in seconds (1 hour)
 PIPELINE_EXPIRY_SECONDS = 3600
@@ -94,6 +95,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- DATABASE MIGRATION ---
+def run_migrations():
+    """Run database migrations to add missing columns."""
+    try:
+        with engine.connect() as conn:
+            # Check if is_duplicate column exists
+            result = conn.execute(text("PRAGMA table_info(jobs)"))
+            columns = [row[1] for row in result.fetchall()]
+            
+            if 'is_duplicate' not in columns:
+                logger.info("Adding is_duplicate column to jobs table...")
+                conn.execute(text("ALTER TABLE jobs ADD COLUMN is_duplicate BOOLEAN DEFAULT 0"))
+                conn.commit()
+                logger.info("Migration complete: is_duplicate column added")
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Run migrations on startup."""
+    run_migrations()
 
 
 def get_db():
@@ -422,6 +447,7 @@ def jobs_search(f: JobFilter, db: Session = Depends(get_db)):
                 "status": j.status or "new",
                 "batch_id": j.batch_id or "",
                 "fetched_at": str(j.fetched_at) if j.fetched_at else "",
+                "is_duplicate": bool(j.is_duplicate) if hasattr(j, 'is_duplicate') else False,
             })
         
         return {"jobs": jobs, "total": total, "limit": f.limit, "offset": f.offset}
@@ -450,6 +476,7 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
             "status": j.status or "new",
             "batch_id": j.batch_id or "",
             "fetched_at": str(j.fetched_at) if j.fetched_at else "",
+            "is_duplicate": bool(j.is_duplicate) if hasattr(j, 'is_duplicate') else False,
         }
     except HTTPException:
         raise
@@ -579,38 +606,44 @@ def _scrape_worker(job_id: str, cfg_snapshot: Dict[str, Any], batch_id: str):
             logger.info(f"[{job_id}] {msg}")
         
         def save_job_callback(job_data: Dict[str, Any]) -> bool:
-            """Callback to save a single job immediately. Returns True if new, False if duplicate."""
+            """Callback to save a single job immediately. Always saves, marks as duplicate if URL exists."""
             nonlocal count, duplicates
             try:
-                existing = db.query(JobDB).filter(JobDB.id == job_data["id"]).first()
-                if not existing:
-                    j = JobDB(
-                        id=job_data["id"],
-                        title=job_data["title"],
-                        company=job_data["company"],
-                        location=job_data["location"],
-                        job_url=job_data["job_url"],
-                        description=job_data["description"],
-                        is_remote=job_data["is_remote"],
-                        date_posted=job_data["date_posted"],
-                        source_site=job_data["source_site"],
-                        search_title=cfg_snapshot["titles"],
-                        search_location=cfg_snapshot["locations"],
-                        batch_id=batch_id
-                    )
-                    db.add(j)
-                    db.commit()
-                    count += 1
-                    # Update stats in real-time
-                    pipeline_manager.update(job_id, stats={
-                        "batch_id": batch_id,
-                        "new_jobs": count,
-                        "duplicates": duplicates
-                    })
-                    return True
-                else:
+                # Check if a job with the same URL already exists (from any previous fetch)
+                existing = db.query(JobDB).filter(JobDB.job_url == job_data["job_url"]).first()
+                is_dup = existing is not None
+                
+                # Generate a unique ID for this job entry
+                import uuid
+                job_entry_id = str(uuid.uuid4())
+                
+                j = JobDB(
+                    id=job_entry_id,
+                    title=job_data["title"],
+                    company=job_data["company"],
+                    location=job_data["location"],
+                    job_url=job_data["job_url"],
+                    description=job_data["description"],
+                    is_remote=job_data["is_remote"],
+                    date_posted=job_data["date_posted"],
+                    source_site=job_data["source_site"],
+                    search_title=cfg_snapshot["titles"],
+                    search_location=cfg_snapshot["locations"],
+                    batch_id=batch_id,
+                    is_duplicate=is_dup
+                )
+                db.add(j)
+                db.commit()
+                count += 1
+                if is_dup:
                     duplicates += 1
-                    return False
+                # Update stats in real-time
+                pipeline_manager.update(job_id, stats={
+                    "batch_id": batch_id,
+                    "new_jobs": count,
+                    "duplicates": duplicates
+                })
+                return True
             except Exception as e:
                 logger.error(f"Failed to save job: {e}")
                 db.rollback()

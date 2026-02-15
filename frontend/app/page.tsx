@@ -472,6 +472,7 @@ export default function Page() {
   }
 
   return (
+    <>
     <div className={`flex h-screen font-sans overflow-hidden theme-transition ${isDark ? 'bg-zinc-950 text-zinc-300' : 'bg-white text-gray-700'}`}>
       <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -602,24 +603,6 @@ export default function Page() {
         </div>
       </div>
 
-      {/* PROGRESS BAR - Fixed at bottom during job fetching */}
-      {pipeline?.state === 'running' && (
-        <ProgressBar
-          stats={{
-            new_jobs: (pipeline.stats?.new_jobs as number) || 0,
-            duplicates: (pipeline.stats?.duplicates as number) || 0,
-            filtered: (pipeline.stats?.filtered as number) || 0,
-            total_queries: (pipeline.stats?.total_queries as number) || 1,
-            current_query: (pipeline.stats?.current_query as number) || 0,
-            current_site: (pipeline.stats?.current_site as string) || '',
-            batch_id: (pipeline.stats?.batch_id as string) || '',
-            started_at: (pipeline.stats?.started_at as number) || Date.now(),
-          }}
-          logs={pipeline.logs}
-          isDark={isDark}
-        />
-      )}
-
       {/* --- SETTINGS MODAL --- */}
       <SettingsModal
         isOpen={showSettingsModal}
@@ -640,5 +623,24 @@ export default function Page() {
         clearingData={clearingData}
       />
     </div>
+
+    {/* PROGRESS BAR - Fixed at bottom during job fetching */}
+    {pipeline?.state === 'running' && (
+      <ProgressBar
+        stats={{
+          new_jobs: (pipeline.stats?.new_jobs as number) || 0,
+          duplicates: (pipeline.stats?.duplicates as number) || 0,
+          filtered: (pipeline.stats?.filtered as number) || 0,
+          total_queries: (pipeline.stats?.total_queries as number) || 1,
+          current_query: (pipeline.stats?.current_query as number) || 0,
+          current_site: (pipeline.stats?.current_site as string) || '',
+          batch_id: (pipeline.stats?.batch_id as string) || '',
+          started_at: (pipeline.stats?.started_at as number) || Date.now(),
+        }}
+        logs={pipeline.logs}
+        isDark={isDark}
+      />
+    )}
+    </>
   );
 }

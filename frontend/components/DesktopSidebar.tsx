@@ -122,7 +122,7 @@ export default function DesktopSidebar({
 
         <div className="space-y-2">
           <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>Platforms</span>
-          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Select job platforms">
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label="Select job platforms">
             {JOB_PLATFORMS.map(site => (
               <label key={site} className={`flex items-center gap-2 cursor-pointer p-2 rounded border text-xs font-medium transition-colors select-none focus-within:ring-2 focus-within:ring-teal-500 ${inputSites.includes(site)
                 ? 'bg-teal-500/10 border-teal-500 text-teal-600 dark:text-teal-400'

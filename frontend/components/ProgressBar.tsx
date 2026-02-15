@@ -25,9 +25,6 @@ type ProgressBarProps = {
 // --- MAIN COMPONENT ---
 
 export default function ProgressBar({ stats, logs, isDark }: ProgressBarProps) {
-  // Debug: Log when ProgressBar renders
-  console.log('🐰 ProgressBar rendered with stats:', stats);
-  
   // Extract values with defaults
   const newJobs = stats.new_jobs || 0;
   const duplicates = stats.duplicates || 0;

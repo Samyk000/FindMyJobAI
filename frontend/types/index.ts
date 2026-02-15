@@ -11,6 +11,7 @@ export type JobRow = {
   status: "new" | "saved" | "rejected";
   batch_id: string;
   fetched_at: string;
+  is_duplicate?: boolean;
 };
 
 // Settings Types

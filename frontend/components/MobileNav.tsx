@@ -296,7 +296,6 @@ export default function MobileNav({
                     {site === "linkedin" && <Linkedin className="w-5 h-5 mx-auto" />}
                     {site === "indeed" && <Briefcase className="w-5 h-5 mx-auto" />}
                     {site === "glassdoor" && <Globe className="w-5 h-5 mx-auto" />}
-                    {site === "zip_recruiter" && <Search className="w-5 h-5 mx-auto" />}
                   </button>
                 )
               )}

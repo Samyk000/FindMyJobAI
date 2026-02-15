@@ -1,11 +1,10 @@
 # FindMyJobAI - Intelligent Job Search Assistant
 
-An AI-powered job search application that aggregates job listings from multiple sources (LinkedIn, Indeed, Glassdoor) and provides intelligent filtering and organization.
+Job search application that aggregates job listings from multiple sources (LinkedIn, Indeed, Glassdoor) and provides intelligent filtering and organization.
 
 ## Features
 
 - 🔍 **Multi-Platform Job Search**: Search jobs from LinkedIn, Indeed, and Glassdoor simultaneously
-- 🤖 **AI-Powered Filtering**: Intelligent deduplication and relevance scoring
 - 💾 **Job Management**: Save, reject, and organize job listings
 - 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
 - 🌓 **Dark/Light Theme**: Toggle between themes with smooth transitions

@@ -26,7 +26,7 @@ export const SUPPORTED_COUNTRIES = [
 ];
 
 // Job Platforms
-export const JOB_PLATFORMS = ['linkedin', 'indeed', 'glassdoor', 'zip_recruiter'] as const;
+export const JOB_PLATFORMS = ['linkedin', 'indeed', 'glassdoor'] as const;
 export type JobPlatform = typeof JOB_PLATFORMS[number];
 
 // Request Configuration
