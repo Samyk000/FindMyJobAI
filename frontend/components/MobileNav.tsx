@@ -46,6 +46,9 @@ type MobileNavProps = {
   isFetching: boolean;
   showMoreOptions: boolean;
   setShowMoreOptions: (v: boolean) => void;
+  // Job count based on current tab
+  jobCount: number;
+  viewStatus: 'new' | 'saved' | 'rejected';
 };
 
 const SUPPORTED_COUNTRIES = [
@@ -88,6 +91,8 @@ export default function MobileNav({
   isFetching,
   showMoreOptions,
   setShowMoreOptions,
+  jobCount = 0,
+  viewStatus = 'new',
 }: MobileNavProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -441,12 +446,33 @@ export default function MobileNav({
           )}
         </div>
 
-        {/* Drawer Footer - Fetch Button */}
+        {/* Drawer Footer - Job Count + Fetch Button */}
         <div
           className={`p-3 border-t sticky bottom-0 ${
             isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-gray-200"
           }`}
         >
+          {/* Job Count Badge */}
+          <div className={`flex items-center justify-between mb-2 px-2 py-1.5 rounded-lg border ${
+            isDark 
+              ? "bg-zinc-800 border-zinc-700 text-zinc-400" 
+              : "bg-gray-100 border-gray-200 text-gray-600"
+          }`}>
+            <span className="text-xs font-medium">
+              {viewStatus === 'new' ? 'New' : viewStatus === 'saved' ? 'Saved' : 'Rejected'}
+            </span>
+            <span className={`text-sm font-bold tabular-nums ${
+              viewStatus === 'new' 
+                ? isDark ? 'text-teal-400' : 'text-teal-600'
+                : viewStatus === 'saved'
+                ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                : isDark ? 'text-red-400' : 'text-red-600'
+            }`}>
+              {jobCount}
+            </span>
+          </div>
+          
+          {/* Fetch Button */}
           <button
             onClick={() => {
               onFetch();

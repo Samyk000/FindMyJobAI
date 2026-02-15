@@ -601,6 +601,24 @@ def _scrape_worker(job_id: str, cfg_snapshot: Dict[str, Any], batch_id: str):
     count = 0
     duplicates = 0
     
+    # Calculate total queries for progress tracking
+    titles = [t.strip() for t in (cfg_snapshot.get("titles") or "").split(",") if t.strip()]
+    locations = [l.strip() for l in (cfg_snapshot.get("locations") or "").split(",") if l.strip()]
+    total_queries = len(titles) * len(locations) if titles and locations else 1
+    
+    # Initialize stats with started_at timestamp and sites list
+    sites_str = ",".join(cfg_snapshot.get("sites", []))
+    pipeline_manager.update(job_id, stats={
+        "batch_id": batch_id,
+        "new_jobs": 0,
+        "duplicates": 0,
+        "filtered": 0,
+        "total_queries": total_queries,
+        "current_query": 0,
+        "current_site": sites_str,
+        "started_at": int(datetime.now(timezone.utc).timestamp() * 1000),
+    })
+    
     try:
         def log(msg: str):
             pipeline_manager.log(job_id, msg)
@@ -644,6 +662,14 @@ def _scrape_worker(job_id: str, cfg_snapshot: Dict[str, Any], batch_id: str):
                 db.rollback()
                 return False
         
+        def progress_callback(current_query: int, total_queries: int, current_site: str):
+            """Callback to update progress stats."""
+            pipeline_manager.update(job_id, stats={
+                "current_query": current_query,
+                "total_queries": total_queries,
+                "current_site": current_site,
+            })
+        
         log("Starting job scrape...")
         
         # Use the incremental scraping function
@@ -658,7 +684,8 @@ def _scrape_worker(job_id: str, cfg_snapshot: Dict[str, Any], batch_id: str):
             hours_old=cfg_snapshot["hours_old"],
             data_mode=cfg_snapshot["data_mode"],
             log=log,
-            on_job_found=save_job_callback
+            on_job_found=save_job_callback,
+            on_progress=progress_callback,
         )
         
         pipeline_manager.update(job_id, state="done", stats={

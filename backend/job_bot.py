@@ -169,6 +169,7 @@ def scrape_jobs_incremental(
     data_mode: str,
     log: LogFn,
     on_job_found: Callable[[Dict[str, Any]], bool],
+    on_progress: Optional[Callable[[int, int, str], None]] = None,
 ) -> Dict[str, int]:
     """
     Scrapes jobs and calls on_job_found callback for each discovered job.
@@ -176,6 +177,7 @@ def scrape_jobs_incremental(
     
     Args:
         on_job_found: Callback function that receives a job dict and returns True if new, False if duplicate
+        on_progress: Optional callback for progress updates: (current_query, total_queries, current_site)
     
     Returns:
         Stats dict with raw_total, kept_total, filtered_out
@@ -197,6 +199,9 @@ def scrape_jobs_incremental(
     if not sites:
         sites = ["linkedin"]
 
+    total_queries = len(titles) * len(locations)
+    current_query = 0
+
     log(f"Scrape plan: titles={len(titles)}, locations={len(locations)}, sites={len(sites)}, country={country}")
     log("Scraping with real-time updates...")
 
@@ -212,7 +217,15 @@ def scrape_jobs_incremental(
 
     for t_i, title in enumerate(titles, start=1):
         for l_i, loc in enumerate(locations, start=1):
-            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{loc}'")
+            current_query += 1
+            # Show all sites being scraped (JobSpy scrapes all sites simultaneously)
+            current_site = ", ".join(sites) if sites else ""
+            
+            # Report progress before scraping
+            if on_progress:
+                on_progress(current_query, total_queries, current_site)
+            
+            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{loc}' via {current_site}")
             try:
                 df = scrape_jobs(
                     site_name=sites,

@@ -573,12 +573,14 @@ export default function Page() {
     const tick = setInterval(async () => {
       try {
         const data = await fetchWithError(`${BACKEND}/logs/${pipelineJobId}`);
+        console.log('🐰 Pipeline poll data:', data.state, data.stats);
         setPipeline(data);
         if (data.state === "running" && data.stats?.batch_id) {
           setCurrentBatchId(data.stats.batch_id as string);
           await fetchJobs(data.stats.batch_id as string);
         }
         if (data.state === "done" || data.state === "failed") {
+          console.log('🐰 Pipeline completed:', data.state);
           setPipelineJobId("");
           setCurrentBatchId(null);
           if (data.state === "done" && data.stats?.batch_id) {
@@ -712,7 +714,22 @@ export default function Page() {
           candidate_profile: inputProfile, include_keywords: inputKeywordsInc, exclude_keywords: inputKeywordsExc
         }),
       });
-      setPipeline({ state: "running", logs: ["Initializing..."], stats: {} });
+      // Initialize stats with proper default values for immediate display
+      console.log('🐰 runScrape: Setting pipeline state to running');
+      setPipeline({ 
+        state: "running", 
+        logs: ["Initializing..."], 
+        stats: {
+          new_jobs: 0,
+          duplicates: 0,
+          filtered: 0,
+          total_queries: 1,
+          current_query: 0,
+          current_site: inputSites.join(','),
+          batch_id: '',
+          started_at: Date.now()
+        } 
+      });
       const data = await fetchWithError(`${BACKEND}/run/scrape`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -864,6 +881,8 @@ export default function Page() {
         isFetching={pipeline?.state === 'running' || actionLoading === 'scrape'}
         showMoreOptions={showMoreOptions}
         setShowMoreOptions={setShowMoreOptions}
+        jobCount={displayJobs.length}
+        viewStatus={viewStatus}
       />
 
       {/* --- MOBILE HEADER --- */}
@@ -1307,15 +1326,38 @@ export default function Page() {
             )}
           </div>
 
-          {/* Desktop Fetch Button */}
-          <button 
-            onClick={runScrape} 
-            disabled={pipeline?.state === 'running' || actionLoading === 'scrape'}
-            aria-busy={pipeline?.state === 'running' || actionLoading === 'scrape'}
-            className={`btn-primary hidden lg:flex px-4 py-2 rounded-lg text-xs font-bold items-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'bg-white text-black' : 'bg-teal-600 text-white'}`}>
-            {(pipeline?.state === 'running' || actionLoading === 'scrape') ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
-            Fetch Jobs
-          </button>
+          {/* Desktop Job Count + Fetch Button */}
+          <div className="hidden lg:flex items-center gap-3">
+            {/* Job Count Badge - shows count based on current tab */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+              isDark 
+                ? 'bg-zinc-900 border-zinc-800 text-zinc-400' 
+                : 'bg-gray-100 border-gray-200 text-gray-600'
+            }`}>
+              <span className="text-xs font-medium">
+                {viewStatus === 'new' ? 'New' : viewStatus === 'saved' ? 'Saved' : 'Rejected'}
+              </span>
+              <span className={`text-sm font-bold tabular-nums ${
+                viewStatus === 'new' 
+                  ? isDark ? 'text-teal-400' : 'text-teal-600'
+                  : viewStatus === 'saved'
+                  ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                  : isDark ? 'text-red-400' : 'text-red-600'
+              }`}>
+                {displayJobs.length}
+              </span>
+            </div>
+            
+            {/* Fetch Button */}
+            <button 
+              onClick={runScrape} 
+              disabled={pipeline?.state === 'running' || actionLoading === 'scrape'}
+              aria-busy={pipeline?.state === 'running' || actionLoading === 'scrape'}
+              className={`btn-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'bg-white text-black' : 'bg-teal-600 text-white'}`}>
+              {(pipeline?.state === 'running' || actionLoading === 'scrape') ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+              Fetch Jobs
+            </button>
+          </div>
         </div>
 
         {/* LIST AREA */}
@@ -1433,25 +1475,25 @@ export default function Page() {
             </div>
           )}
         </div>
-
-        {/* ENHANCED PROGRESS BAR */}
-        {pipeline?.state === 'running' && pipeline.stats && (
-          <ProgressBar
-            stats={{
-              new_jobs: (pipeline.stats.new_jobs as number) || 0,
-              duplicates: (pipeline.stats.duplicates as number) || 0,
-              filtered: (pipeline.stats.filtered as number) || 0,
-              total_queries: (pipeline.stats.total_queries as number) || 0,
-              current_query: (pipeline.stats.current_query as number) || 0,
-              current_site: (pipeline.stats.current_site as string) || '',
-              batch_id: (pipeline.stats.batch_id as string) || '',
-              started_at: (pipeline.stats.started_at as number) || Date.now(),
-            }}
-            logs={pipeline.logs}
-            isDark={isDark}
-          />
-        )}
       </div>
+
+      {/* PROGRESS BAR - Fixed at bottom during job fetching */}
+      {pipeline?.state === 'running' && (
+        <ProgressBar
+          stats={{
+            new_jobs: (pipeline.stats?.new_jobs as number) || 0,
+            duplicates: (pipeline.stats?.duplicates as number) || 0,
+            filtered: (pipeline.stats?.filtered as number) || 0,
+            total_queries: (pipeline.stats?.total_queries as number) || 1,
+            current_query: (pipeline.stats?.current_query as number) || 0,
+            current_site: (pipeline.stats?.current_site as string) || '',
+            batch_id: (pipeline.stats?.batch_id as string) || '',
+            started_at: (pipeline.stats?.started_at as number) || Date.now(),
+          }}
+          logs={pipeline.logs}
+          isDark={isDark}
+        />
+      )}
 
       {/* --- PROFILE MODAL --- */}
       {showProfileModal && (
