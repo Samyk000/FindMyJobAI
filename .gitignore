@@ -86,3 +86,9 @@ coverage/
 
 # Project specific
 memory/
+
+# Tauri sidecar binaries (built from backend)
+frontend/src-tauri/binaries/
+
+# Development plans (keep locally, don't push to GitHub)
+plans/

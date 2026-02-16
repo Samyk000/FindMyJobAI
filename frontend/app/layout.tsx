@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { BackendStatus } from "@/components/BackendStatus";
 
 const outfit = Outfit({
   variable: "--font-display",
@@ -74,7 +75,9 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        {children}
+        <BackendStatus>
+          {children}
+        </BackendStatus>
         {/* Script to detect mouse vs keyboard navigation */}
         <script dangerouslySetInnerHTML={{ __html: `
           document.addEventListener('mousedown', function() { document.body.classList.add('using-mouse'); });

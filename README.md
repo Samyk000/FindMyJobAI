@@ -1,15 +1,18 @@
-# FindMyJob - Job Search Assistant
+# FindMyJobAI - Job Search Assistant
 
 Job search application that aggregates job listings from multiple sources (LinkedIn, Indeed, Glassdoor) with intelligent filtering and organization.
+
+**Available as both a web application and a Windows desktop application.**
 
 ## Features
 
 - 🔍 **Multi-Platform Job Search**: Search jobs from LinkedIn, Indeed, and Glassdoor simultaneously
 - 🔄 **Duplicate Detection**: Automatically skips duplicate job listings
--  **Job Management**: Save, reject, and organize job listings
+- 💾 **Job Management**: Save, reject, and organize job listings
 - 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
 - 🌓 **Dark/Light Theme**: Toggle between themes with smooth transitions
 - ⚡ **Real-Time Progress**: Live progress tracking during job searches
+- 🖥️ **Desktop App**: Native Windows application with automatic backend management
 
 ## Tech Stack
 
@@ -19,12 +22,14 @@ Job search application that aggregates job listings from multiple sources (Linke
 - **TypeScript** - Type-safe development
 - **Tailwind CSS 4** - Utility-first styling
 - **Lucide Icons** - Beautiful, consistent icons
+- **Tauri v2** - Desktop application framework (Windows)
 
 ### Backend
 - **FastAPI** - Python web framework
 - **SQLAlchemy** - ORM for database operations
 - **SQLite** - Lightweight database
 - **python-jobspy** - Job scraping library
+- **PyInstaller** - Python bundler for desktop app
 
 ## Project Structure
 
@@ -58,12 +63,19 @@ linkedin-job-bot/
 
 ## Getting Started
 
-### Prerequisites
+You can run FindMyJobAI in two ways:
+
+1. **Web Application** - Run backend and frontend separately (for development)
+2. **Desktop Application** - Install the Windows desktop app (for end users)
+
+### Option 1: Web Application (Development)
+
+#### Prerequisites
 
 - Node.js 18+ and npm
 - Python 3.10+
 
-### Backend Setup
+#### Backend Setup
 
 ```bash
 cd backend
@@ -90,6 +102,41 @@ npm install
 # Start development server
 npm run dev
 ```
+
+### Option 2: Desktop Application (Windows)
+
+#### For End Users
+
+Download and run the installer from the `dist/` folder:
+- **NSIS Installer**: `FindMyJobAI_1.0.0_x64-setup.exe` (~100 MB)
+- **MSI Installer**: `FindMyJobAI_1.0.0_x64_en-US.msi` (~102 MB)
+
+The desktop app:
+- Automatically starts the backend when launched
+- Stores data in `%LOCALAPPDATA%\FindMyJobAI\`
+- Cleans up the backend process when closed
+
+#### For Developers: Building the Desktop App
+
+Prerequisites:
+- Node.js 18+ and npm
+- Python 3.10+
+- Rust and Cargo (install from https://rustup.rs)
+
+Build steps:
+```bash
+# 1. Build the backend executable
+.\build_backend.ps1
+
+# 2. Build the Tauri application
+cd frontend
+npm install
+npx tauri build
+```
+
+Output installers will be at:
+- `frontend\src-tauri\target\release\bundle\msi\FindMyJobAI_1.0.0_x64_en-US.msi`
+- `frontend\src-tauri\target\release\bundle\nsis\FindMyJobAI_1.0.0_x64-setup.exe`
 
 ### Environment Variables
 

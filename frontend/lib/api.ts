@@ -3,8 +3,10 @@
  * Provides typed API calls with error handling and timeouts.
  */
 
+import { CONFIG } from './config';
+
 // API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = CONFIG.API_BASE_URL;
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const SEARCH_TIMEOUT = 120000; // 2 minutes for search operations
 

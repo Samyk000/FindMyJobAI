@@ -31,9 +31,8 @@ def get_env_int(key: str, default: int = 0) -> int:
 
 
 # --- DATABASE CONFIGURATION ---
-BASE_DIR = os.path.dirname(__file__)
-DB_PATH = os.path.join(BASE_DIR, "jobs.db")
-DB_URL = get_env_str("DB_URL", f"sqlite:///{DB_PATH}")
+from database_config import get_database_url
+DB_URL = get_env_str("DB_URL", get_database_url())
 
 
 # --- CORS CONFIGURATION ---

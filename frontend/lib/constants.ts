@@ -1,7 +1,8 @@
 import { SearchTab } from '@/types';
 
 // API Configuration
-export const DEFAULT_BACKEND = "http://localhost:8000";
+import { CONFIG } from './config';
+export const DEFAULT_BACKEND = CONFIG.API_BASE_URL;
 
 // Storage Keys
 export const TABS_STORAGE_KEY = "job-bot-tabs";

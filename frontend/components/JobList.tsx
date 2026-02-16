@@ -5,6 +5,7 @@ import { MapPin, Clock, Building2, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import { JobRow } from '@/types';
 import SkeletonJobRow from './SkeletonJobRow';
+import { openUrl } from '@/lib/tauri';
 
 // Dynamic imports
 const EmptyState = dynamic(() => import("./EmptyState"), { ssr: false });
@@ -50,7 +51,7 @@ export default function JobList({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <h4 className={`text-sm font-bold truncate ${isDark ? 'text-zinc-200' : 'text-gray-800'}`}>
-                    <a href={j.job_url} target="_blank" rel="noopener noreferrer" className="hover:underline">{j.title}</a>
+                    <button onClick={() => openUrl(j.job_url)} className="hover:underline text-left cursor-pointer">{j.title}</button>
                   </h4>
                   <div className={`text-xs truncate mt-0.5 ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>{j.company || 'Unknown Company'}</div>
                  </div>
@@ -77,7 +78,7 @@ export default function JobList({
               <div className="col-span-4 min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className={`text-sm font-bold truncate group-hover:text-teal-500 transition-colors ${isDark ? 'text-zinc-200' : 'text-gray-800'}`}>
-                    <a href={j.job_url} target="_blank" rel="noopener noreferrer" className="hover:underline">{j.title}</a>
+                    <button onClick={() => openUrl(j.job_url)} className="hover:underline text-left cursor-pointer">{j.title}</button>
                   </h4>
                   {j.is_remote && <span className="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-500 border border-teal-500/20 text-[9px] font-bold uppercase">Remote</span>}
                 </div>

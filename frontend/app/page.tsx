@@ -7,7 +7,8 @@ import dynamic from "next/dynamic";
 import { JobRow, SettingsModel, SearchTab, PipelineStatus, ThemeMode } from "@/types";
 
 // Constants
-import { DEFAULT_BACKEND, DEFAULT_TABS, REQUEST_TIMEOUT, CACHE_TTL } from "@/lib/constants";
+import { DEFAULT_TABS, REQUEST_TIMEOUT, CACHE_TTL } from "@/lib/constants";
+import { CONFIG } from "@/lib/config";
 
 // Utils
 import { 
@@ -36,7 +37,7 @@ import JobList from "../components/JobList";
 // --- MAIN PAGE COMPONENT ---
 
 export default function Page() {
-  const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || DEFAULT_BACKEND;
+  const BACKEND = CONFIG.API_BASE_URL;
 
   // -- STATE --
   const [error, setError] = useState<string | null>(null);

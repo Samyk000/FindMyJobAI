@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { JobRow } from "@/types";
+import { openUrl } from "@/lib/tauri";
 
 // --- TYPES ---
 
@@ -112,14 +113,12 @@ const JobCard = memo(function JobCard({
                 isDark ? "text-zinc-200" : "text-gray-800"
               }`}
             >
-              <a
-                href={job.job_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
+              <button
+                onClick={() => openUrl(job.job_url)}
+                className="hover:underline text-left cursor-pointer"
               >
                 {job.title}
-              </a>
+              </button>
             </h4>
             <div
               className={`text-[10px] truncate mt-0.5 ${
@@ -221,14 +220,12 @@ const JobCard = memo(function JobCard({
                 isDark ? "text-zinc-200" : "text-gray-800"
               }`}
             >
-              <a
-                href={job.job_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
+              <button
+                onClick={() => openUrl(job.job_url)}
+                className="hover:underline text-left cursor-pointer"
               >
                 {job.title}
-              </a>
+              </button>
             </h4>
             {job.is_remote && (
               <span className="px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-500 border border-teal-500/20 text-[9px] font-bold uppercase">
