@@ -534,15 +534,39 @@ export default function Page() {
     });
   }, [jobs, viewStatus, activeTabId, pipeline?.state, currentBatchId, tabs]);
 
-  const uniquePortals = useMemo(() => Array.from(new Set(baseJobs.map(j => j.source_site).filter(Boolean))).sort(), [baseJobs]);
-  const uniqueLocations = useMemo(() => Array.from(new Set(baseJobs.map(j => j.location).filter(Boolean))).sort(), [baseJobs]);
+  // Null-safe extraction of unique filter values
+  const uniquePortals = useMemo(() => {
+    const portals = baseJobs
+      .map(j => j?.source_site)
+      .filter((site): site is string => typeof site === 'string' && site.length > 0);
+    return Array.from(new Set(portals)).sort();
+  }, [baseJobs]);
+  
+  const uniqueLocations = useMemo(() => {
+    const locations = baseJobs
+      .map(j => j?.location)
+      .filter((loc): loc is string => typeof loc === 'string' && loc.length > 0);
+    return Array.from(new Set(locations)).sort();
+  }, [baseJobs]);
 
   // Multi-select filter logic: empty array means "all" selected (no filter)
+  // Includes null safety checks for job properties
   const displayJobs = useMemo(() => {
+    // Ensure filter arrays are valid (defensive against undefined/null)
+    const safeFilterPortal = filterPortal ?? [];
+    const safeFilterLocation = filterLocation ?? [];
+    
     return baseJobs.filter(j => {
+      // Skip invalid job entries
+      if (!j || typeof j !== 'object') return false;
+      
       // If filters are empty, show all; otherwise only show matching items
-      if (filterPortal.length > 0 && !filterPortal.includes(j.source_site)) return false;
-      if (filterLocation.length > 0 && !filterLocation.includes(j.location)) return false;
+      // Use optional chaining and nullish coalescing for safety
+      const jobSourceSite = j.source_site ?? '';
+      const jobLocation = j.location ?? '';
+      
+      if (safeFilterPortal.length > 0 && !safeFilterPortal.includes(jobSourceSite)) return false;
+      if (safeFilterLocation.length > 0 && !safeFilterLocation.includes(jobLocation)) return false;
       return true;
     });
   }, [baseJobs, filterPortal, filterLocation]);
