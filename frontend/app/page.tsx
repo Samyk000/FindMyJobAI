@@ -110,18 +110,6 @@ export default function Page() {
     }
   }, [theme]);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setPortalDropdownOpen(false);
-      setLocationDropdownOpen(false);
-    };
-    if (portalDropdownOpen || locationDropdownOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [portalDropdownOpen, locationDropdownOpen]);
-
   // Keyboard navigation - Escape to close modals
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -219,7 +207,7 @@ export default function Page() {
         if (newJobsCount > 0) {
           // Use requestAnimationFrame to ensure state is updated
           requestAnimationFrame(() => {
-            // Set new job IDs for highlighting
+            // Set new job IDs for highlighting (persists until next fetch)
             setNewJobIds(new Set(newJobIdList));
             
             // Show notification if requested
@@ -227,9 +215,6 @@ export default function Page() {
               setNotification(`${newJobsCount} new job${newJobsCount > 1 ? 's' : ''} found!`);
               setTimeout(() => setNotification(null), 3000);
             }
-            
-            // Clear highlight after 3 seconds
-            setTimeout(() => setNewJobIds(new Set()), 3000);
           });
         }
       } else {
@@ -413,6 +398,9 @@ export default function Page() {
       return;
     }
     lastFetchTimeRef.current = now;
+
+    // Clear previous new job highlights when starting a new fetch
+    setNewJobIds(new Set());
 
     // Track which tab initiated this fetch
     const tabIdThatInitiatedFetch = activeTabId;

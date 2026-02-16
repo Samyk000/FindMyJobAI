@@ -216,8 +216,9 @@ const JobCard = memo(function JobCard({
       </div>
 
       {/* Desktop Content - Compact Grid */}
-      <div className="hidden lg:flex flex-1 min-w-0 grid-cols-12 gap-4 items-center">
-        <div className="col-span-4 min-w-0">
+      <div className="hidden lg:flex flex-1 min-w-0 items-center gap-4">
+        {/* Title + Company */}
+        <div className="flex-1 min-w-0 max-w-[35%]">
           <div className="flex items-center gap-2">
             <h4
               className={`text-sm font-bold truncate group-hover:text-teal-500 transition-colors ${
@@ -246,31 +247,32 @@ const JobCard = memo(function JobCard({
           </div>
         </div>
 
+        {/* Location */}
         <div
-          className={`col-span-3 flex items-center gap-1.5 text-xs truncate ${
+          className={`flex items-center gap-1.5 text-xs min-w-[20%] max-w-[25%] ${
             isDark ? "text-zinc-400" : "text-gray-600"
           }`}
         >
           <MapPin
-            className={`w-3 h-3 ${isDark ? "text-zinc-600" : "text-gray-400"}`}
+            className={`w-3 h-3 flex-shrink-0 ${isDark ? "text-zinc-600" : "text-gray-400"}`}
           />
           <span className="truncate">{job.location || "Location N/A"}</span>
         </div>
 
-        <div
-          className={`col-span-2 flex items-center gap-1.5 text-xs ${
-            isDark ? "text-zinc-500" : "text-gray-500"
-          }`}
-        >
-          <Clock
-            className={`w-3 h-3 ${isDark ? "text-zinc-700" : "text-gray-400"}`}
-          />
-          <span title={job.date_posted || "Recently posted"}>
-            {job.date_posted || "Recently"}
-          </span>
-        </div>
-
-        <div className="col-span-3 flex justify-end">
+        {/* Time + Portal - Right aligned */}
+        <div className="flex items-center justify-end gap-3 ml-auto flex-shrink-0">
+          <div
+            className={`flex items-center gap-1.5 text-xs ${
+              isDark ? "text-zinc-500" : "text-gray-500"
+            }`}
+          >
+            <Clock
+              className={`w-3 h-3 ${isDark ? "text-zinc-600" : "text-gray-400"}`}
+            />
+            <span title={job.date_posted || "Recently posted"}>
+              {job.date_posted || "Recently"}
+            </span>
+          </div>
           <span
             className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${getSourceBadgeClasses(
               job.source_site,

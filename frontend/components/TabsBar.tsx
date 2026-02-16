@@ -83,8 +83,8 @@ export default function TabsBar({
             }}
             className={`group flex items-center gap-2 px-4 h-9 rounded-t-lg text-xs font-bold border-t border-x cursor-pointer transition-all min-w-[120px] max-w-[200px] select-none flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${activeTabId === tab.id
               ? isDark
-                ? 'bg-zinc-900 border-zinc-700 text-white translate-y-[1px] z-10'
-                : 'bg-gray-100 border-gray-300 text-gray-900 translate-y-[1px] z-10'
+                ? 'bg-zinc-900 border-zinc-700 text-white translate-y-[1px] z-10 border-b-teal-500 border-b-2'
+                : 'bg-gray-50 border-gray-300 text-gray-900 translate-y-[1px] z-10 border-b-teal-500 border-b-2'
               : isDark
                 ? 'bg-zinc-950 border-transparent text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300 mb-1'
                 : 'bg-white border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700 mb-1'

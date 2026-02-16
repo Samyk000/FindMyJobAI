@@ -189,15 +189,15 @@ export default function FilterBar({
 
   // Display text for portal filter button
   const getPortalButtonText = useCallback(() => {
-    if (filterPortal.length === 0) return 'All Portals';
-    if (filterPortal.length === 1) return filterPortal[0] ?? 'All Portals';
+    if (filterPortal.length === 0) return 'Portals';
+    if (filterPortal.length === 1) return filterPortal[0] ?? 'Portals';
     return `${filterPortal.length} Portals`;
   }, [filterPortal]);
 
   // Display text for location filter button
   const getLocationButtonText = useCallback(() => {
-    if (filterLocation.length === 0) return 'All Locations';
-    if (filterLocation.length === 1) return filterLocation[0] ?? 'All Locations';
+    if (filterLocation.length === 0) return 'Location';
+    if (filterLocation.length === 1) return filterLocation[0] ?? 'Location';
     return `${filterLocation.length} Locations`;
   }, [filterLocation]);
 
@@ -374,6 +374,8 @@ export default function FilterBar({
             {portalDropdownOpen && (
               <ul 
                 ref={portalListRef}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 className={`absolute left-0 top-full mt-1 z-50 min-w-[140px] max-w-[180px] max-h-52 overflow-y-auto rounded-lg shadow-xl ${
                   isDark ? 'bg-zinc-800 border border-zinc-700' : 'bg-white border border-gray-200'
                 }`}
@@ -384,6 +386,7 @@ export default function FilterBar({
               >
                 {/* All Portals option */}
                 <li
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => setFilterPortal([])}
                   role="option"
                   aria-selected={filterPortal.length === 0}
@@ -412,6 +415,7 @@ export default function FilterBar({
                 {uniquePortals.map((p, index) => (
                   <li
                     key={p}
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleValue(filterPortal, p, setFilterPortal);
@@ -482,6 +486,8 @@ export default function FilterBar({
             {locationDropdownOpen && (
               <ul 
                 ref={locationListRef}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 className={`absolute right-0 lg:left-0 top-full mt-1 z-50 min-w-[140px] max-w-[180px] max-h-52 overflow-y-auto rounded-lg shadow-xl ${
                   isDark ? 'bg-zinc-800 border border-zinc-700' : 'bg-white border border-gray-200'
                 }`}
@@ -492,6 +498,7 @@ export default function FilterBar({
               >
                 {/* All Locations option */}
                 <li
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => setFilterLocation([])}
                   role="option"
                   aria-selected={filterLocation.length === 0}
@@ -520,6 +527,7 @@ export default function FilterBar({
                 {uniqueLocations.map((l, index) => (
                   <li
                     key={l}
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleValue(filterLocation, l, setFilterLocation);
