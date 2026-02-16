@@ -13,6 +13,7 @@ from services.pipeline import pipeline_manager
 from services.scraper import ScraperService
 from services.job_service import SettingsService
 from utils.exceptions import ValidationError, NotFoundError
+from utils.helpers import sanitize_csv_input
 
 logger = logging.getLogger("job-agent")
 
@@ -39,10 +40,10 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
     try:
         cfg = SettingsService.get_or_create_settings(db)
         
-        # Apply ephemeral overrides
-        titles = payload.titles or cfg.titles
-        locations = payload.locations or cfg.locations
-        country = payload.country or cfg.country
+        # Apply ephemeral overrides with sanitization
+        titles = sanitize_csv_input(payload.titles, max_length=MAX_TITLE_LENGTH) if payload.titles else cfg.titles
+        locations = sanitize_csv_input(payload.locations, max_length=MAX_LOCATION_LENGTH) if payload.locations else cfg.locations
+        country = sanitize_csv_input(payload.country, max_length=100) if payload.country else cfg.country
         hours_old = payload.hours_old or cfg.hours_old
         
         # Validate required fields
@@ -71,7 +72,7 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
                 detail="Only one scrape job can run at a time"
             )
         
-        # Update settings with ephemeral values
+        # Update settings with sanitized values
         cfg.titles = titles
         cfg.locations = locations
         cfg.country = country

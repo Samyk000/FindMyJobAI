@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from models import JobDB, SettingsDB
 
@@ -319,12 +320,20 @@ class JobService:
         Returns:
             Dictionary with total, new, saved, rejected counts
         """
-        return {
-            "total": db.query(JobDB).count(),
-            "new": db.query(JobDB).filter(JobDB.status == "new").count(),
-            "saved": db.query(JobDB).filter(JobDB.status == "saved").count(),
-            "rejected": db.query(JobDB).filter(JobDB.status == "rejected").count(),
-        }
+        # Single query with GROUP BY is much more efficient than 4 separate queries
+        counts = db.query(
+            JobDB.status, 
+            func.count(JobDB.id)
+        ).group_by(JobDB.status).all()
+        
+        # Convert to dictionary with defaults
+        result = {"total": 0, "new": 0, "saved": 0, "rejected": 0}
+        for status, count in counts:
+            if status in result:
+                result[status] = count
+            result["total"] += count
+        
+        return result
 
 
 class SettingsService:

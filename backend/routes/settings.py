@@ -11,7 +11,7 @@ from database import get_db
 from config import SUPPORTED_COUNTRIES, SUPPORTED_SITES
 from schemas import SettingsIn, ConnectIn
 from services.job_service import SettingsService
-from utils.helpers import mask_api_key
+from utils.helpers import mask_api_key, sanitize_csv_input, sanitize_input
 
 logger = logging.getLogger("job-agent")
 
@@ -104,14 +104,24 @@ def save_settings(payload: SettingsIn, db: Session = Depends(get_db)):
         Success message
     """
     try:
+        # Sanitize all text inputs
+        sanitized_titles = sanitize_csv_input(payload.titles) if payload.titles else ""
+        sanitized_locations = sanitize_csv_input(payload.locations) if payload.locations else ""
+        sanitized_country = sanitize_input(payload.country, max_length=100) if payload.country else "india"
+        sanitized_include_kw = sanitize_csv_input(payload.include_keywords) if payload.include_keywords else ""
+        sanitized_exclude_kw = sanitize_csv_input(payload.exclude_keywords) if payload.exclude_keywords else ""
+        
+        # Sanitize site names (they come as a list)
+        sanitized_sites = ",".join(sanitize_input(s, max_length=50) for s in payload.sites if s)
+        
         SettingsService.update_settings(
             db,
-            titles=payload.titles,
-            locations=payload.locations,
-            country=payload.country,
-            include_keywords=payload.include_keywords,
-            exclude_keywords=payload.exclude_keywords,
-            sites=",".join(payload.sites),
+            titles=sanitized_titles,
+            locations=sanitized_locations,
+            country=sanitized_country,
+            include_keywords=sanitized_include_kw,
+            exclude_keywords=sanitized_exclude_kw,
+            sites=sanitized_sites,
             results_per_site=payload.results_per_site,
             hours_old=payload.hours_old
         )

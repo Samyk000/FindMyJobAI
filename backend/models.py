@@ -18,16 +18,16 @@ class JobDB(Base):
     title = Column(String, default="")
     company = Column(String, default="")
     location = Column(String, default="")
-    job_url = Column(String, default="")
+    job_url = Column(String, default="", index=True)  # Index for duplicate checking
     description = Column(Text, default="")
     is_remote = Column(Boolean, default=False)
     date_posted = Column(String, default="")
-    source_site = Column(String, default="")
+    source_site = Column(String, default="", index=True)  # Index for portal filter
     search_title = Column(String, default="")
     search_location = Column(String, default="")
-    status = Column(String, default="new")  # new, saved, rejected
-    batch_id = Column(String, default="")
-    fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    status = Column(String, default="new", index=True)  # Index for status filter
+    batch_id = Column(String, default="", index=True)  # Index for tab filtering
+    fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)  # Index for ordering
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

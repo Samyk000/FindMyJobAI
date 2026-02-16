@@ -61,6 +61,11 @@ export function saveTabsToStorage(tabs: SearchTab[], activeTabId: string): void 
 
 // --- FETCH UTILITIES ---
 
+/**
+ * @deprecated Use `apiClient` from '@/lib/api' instead.
+ * This function is kept for backward compatibility during migration.
+ * See the migration guide in plans3/phase3-code-quality-plan.md
+ */
 export async function fetchWithError(
   url: string, 
   options: RequestInit | undefined,

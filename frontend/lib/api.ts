@@ -1,14 +1,16 @@
 /**
  * Centralized API client for the Job Bot frontend.
- * Provides typed API calls with error handling and timeouts.
+ * Provides typed API calls with error handling, timeouts, and caching.
  */
 
 import { CONFIG } from './config';
+import { JobRow, SettingsModel, PipelineStatus } from '@/types';
 
 // API configuration
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const SEARCH_TIMEOUT = 120000; // 2 minutes for search operations
+const DEFAULT_CACHE_TTL = 60000; // 1 minute cache TTL
 
 // Types for API responses
 export interface ApiResponse<T> {
@@ -25,6 +27,9 @@ export interface ApiError {
   detail?: string;
   status?: number;
 }
+
+// Request cache for GET requests
+const requestCache = new Map<string, { data: unknown; timestamp: number }>();
 
 /**
  * Custom error class for API errors
@@ -44,13 +49,39 @@ export class ApiClientError extends Error {
 }
 
 /**
- * Make a fetch request with timeout and error handling
+ * Clear the API cache (useful after mutations)
+ */
+export function clearApiCache(): void {
+  requestCache.clear();
+}
+
+/**
+ * Clear a specific cache key
+ */
+export function clearCacheKey(key: string): void {
+  requestCache.delete(key);
+}
+
+/**
+ * Make a fetch request with timeout, error handling, and optional caching
  */
 async function fetchWithTimeout<T>(
   url: string,
   options: RequestInit = {},
-  timeout: number = DEFAULT_TIMEOUT
+  timeout: number = DEFAULT_TIMEOUT,
+  useCache: boolean = true
 ): Promise<T> {
+  // Check cache for GET requests
+  const isGetRequest = !options.method || options.method === 'GET';
+  const cacheKey = isGetRequest && useCache ? url : null;
+  
+  if (cacheKey) {
+    const cached = requestCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < DEFAULT_CACHE_TTL) {
+      return cached.data as T;
+    }
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -77,6 +108,11 @@ async function fetchWithTimeout<T>(
         detail: data.detail,
         status: response.status,
       });
+    }
+
+    // Cache successful GET requests
+    if (cacheKey) {
+      requestCache.set(cacheKey, { data, timestamp: Date.now() });
     }
 
     return data as T;
@@ -125,7 +161,7 @@ export const apiClient = {
     batch_id?: string;
     source_site?: string;
     location?: string;
-  } = {}): Promise<{ jobs: unknown[]; total: number; limit: number; offset: number }> {
+  } = {}): Promise<{ jobs: JobRow[]; total: number; limit: number; offset: number }> {
     const searchParams = new URLSearchParams();
     if (params.status) searchParams.set('status', params.status);
     if (params.limit) searchParams.set('limit', params.limit.toString());
@@ -141,36 +177,44 @@ export const apiClient = {
   /**
    * Get a single job by ID
    */
-  async getJob(jobId: string): Promise<unknown> {
+  async getJob(jobId: string): Promise<JobRow> {
     return fetchWithTimeout(`${API_BASE_URL}/jobs/${jobId}`);
   },
 
   /**
    * Update a job's status
    */
-  async updateJobStatus(jobId: string, status: string): Promise<unknown> {
-    return fetchWithTimeout(`${API_BASE_URL}/jobs/${jobId}`, {
+  async updateJobStatus(jobId: string, status: 'new' | 'saved' | 'rejected'): Promise<JobRow> {
+    const result = await fetchWithTimeout<JobRow>(`${API_BASE_URL}/jobs/${jobId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    // Clear jobs cache after mutation
+    clearCacheKey(`${API_BASE_URL}/jobs/search`);
+    return result;
   },
 
   /**
    * Delete a job
    */
   async deleteJob(jobId: string): Promise<void> {
-    return fetchWithTimeout(`${API_BASE_URL}/jobs/${jobId}`, {
+    await fetchWithTimeout(`${API_BASE_URL}/jobs/${jobId}`, {
       method: 'DELETE',
     });
+    // Clear jobs cache after mutation
+    clearCacheKey(`${API_BASE_URL}/jobs/search`);
   },
 
   /**
    * Clear all jobs
    */
   async clearAllJobs(): Promise<{ ok: boolean; message: string; count: number }> {
-    return fetchWithTimeout(`${API_BASE_URL}/jobs/clear`, {
+    const result = await fetchWithTimeout<{ ok: boolean; message: string; count: number }>(`${API_BASE_URL}/jobs/clear`, {
       method: 'POST',
     });
+    // Clear all cache after clearing jobs
+    clearApiCache();
+    return result;
   },
 
   // --- SEARCH ENDPOINTS ---
@@ -197,11 +241,7 @@ export const apiClient = {
   /**
    * Get pipeline logs
    */
-  async getPipelineLogs(jobId: string): Promise<{
-    state: string;
-    logs: string[];
-    stats: Record<string, unknown>;
-  }> {
+  async getPipelineLogs(jobId: string): Promise<PipelineStatus> {
     return fetchWithTimeout(`${API_BASE_URL}/logs/${jobId}`);
   },
 
@@ -210,18 +250,21 @@ export const apiClient = {
   /**
    * Get current settings
    */
-  async getSettings(): Promise<unknown> {
+  async getSettings(): Promise<SettingsModel> {
     return fetchWithTimeout(`${API_BASE_URL}/settings`);
   },
 
   /**
    * Update settings
    */
-  async updateSettings(settings: Record<string, unknown>): Promise<unknown> {
-    return fetchWithTimeout(`${API_BASE_URL}/settings`, {
+  async updateSettings(settings: Partial<SettingsModel>): Promise<SettingsModel> {
+    const result = await fetchWithTimeout<SettingsModel>(`${API_BASE_URL}/settings`, {
       method: 'POST',
       body: JSON.stringify(settings),
     });
+    // Clear settings cache after mutation
+    clearCacheKey(`${API_BASE_URL}/settings`);
+    return result;
   },
 
   /**

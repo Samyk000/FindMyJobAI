@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import { Settings, X, Sun, Moon, AlertCircle, Trash2, Loader2 } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -22,14 +23,8 @@ export default function SettingsModal({
   onShowClearConfirm,
   clearingData
 }: SettingsModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Focus management
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      modalRef.current.focus();
-    }
-  }, [isOpen]);
+  // Focus trap for accessibility (WCAG 2.4.3)
+  const modalRef = useFocusTrap<HTMLDivElement>(isOpen, onClose);
 
   if (!isOpen) return null;
 

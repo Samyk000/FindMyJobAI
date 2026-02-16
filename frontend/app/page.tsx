@@ -330,8 +330,9 @@ export default function Page() {
           // Show notification for any new jobs found
           await fetchJobs({ merge: true, showNotification: true });
         }
-      } catch { 
-        // Silently handle polling errors
+      } catch (err) {
+        // Log polling errors for debugging - don't show to user to avoid noise
+        console.error('Polling error:', err);
       }
     }, 1000);
     return () => clearInterval(tick);
@@ -470,6 +471,8 @@ export default function Page() {
     if (now - lastCall < 500) return;
     debounceRef.current[`status-${id}`] = now;
 
+    // Store previous state for rollback on error
+    const previousJobs = jobs;
     setJobs(jobs.map(j => j.id === id ? { ...j, status: st } : j));
     try {
       await fetchWithErrorCallback(`${BACKEND}/jobs/${id}`, {
@@ -478,7 +481,7 @@ export default function Page() {
         body: JSON.stringify({ status: st }),
       });
     } catch (err) {
-      setJobs(jobs);
+      setJobs(previousJobs);  // Restore from snapshot
       setError(err instanceof Error ? err.message : 'Update failed');
     }
   }
