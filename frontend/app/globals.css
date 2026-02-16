@@ -1051,6 +1051,26 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* New job highlight animation */
+@keyframes highlight {
+  0% {
+    background-color: rgba(20, 184, 166, 0.2);
+    border-left-color: rgba(20, 184, 166, 1);
+  }
+  50% {
+    background-color: rgba(20, 184, 166, 0.1);
+    border-left-color: rgba(20, 184, 166, 0.8);
+  }
+  100% {
+    background-color: transparent;
+    border-left-color: transparent;
+  }
+}
+
+.animate-highlight {
+  animation: highlight 3s ease-out forwards;
+}
+
 /* --- Filter Change Transition --- */
 
 /* Smooth height transition for filter changes */

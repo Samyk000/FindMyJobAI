@@ -61,8 +61,9 @@ export default function Page() {
   const [inputKeywordsInc, setInputKeywordsInc] = useState("");
   const [inputKeywordsExc, setInputKeywordsExc] = useState("");
 
-  const [filterPortal, setFilterPortal] = useState("all");
-  const [filterLocation, setFilterLocation] = useState("all");
+  // Multi-select filters: empty array means "all" selected
+  const [filterPortal, setFilterPortal] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState<string[]>([]);
   const [portalDropdownOpen, setPortalDropdownOpen] = useState(false);
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
 
@@ -72,6 +73,12 @@ export default function Page() {
   const [pipeline, setPipeline] = useState<PipelineStatus | null>(null);
   const [pipelineJobId, setPipelineJobId] = useState<string>("");
   const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
+  const [fetchingTabId, setFetchingTabId] = useState<string | null>(null);  // Track which tab initiated fetch
+  
+  // New job tracking for highlights and notifications
+  const [newJobIds, setNewJobIds] = useState<Set<string>>(new Set());  // Newly fetched job IDs for highlighting
+  const [notification, setNotification] = useState<string | null>(null);  // Toast notification for new jobs
+  const lastFetchTimeRef = useRef<number>(0);  // Rate limiting for fetch clicks
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'dark';
@@ -170,7 +177,12 @@ export default function Page() {
     }
   }, [BACKEND, fetchWithErrorCallback]);
 
-  const fetchJobs = useCallback(async (batchId?: string) => {
+  const fetchJobs = useCallback(async (options?: { 
+    batchId?: string; 
+    merge?: boolean;
+    showNotification?: boolean;  // Whether to show notification for new jobs
+  }) => {
+    const { batchId, merge = false, showNotification = false } = options || {};
     try {
       const data = await fetchWithErrorCallback(`${BACKEND}/jobs/search`, {
         method: "POST",
@@ -181,7 +193,48 @@ export default function Page() {
           batch_id: batchId || undefined
         }),
       }) as { jobs: JobRow[] };
-      setJobs(data.jobs || []);
+      
+      const fetchedJobs = data.jobs || [];
+      
+      if (merge) {
+        // Calculate new jobs BEFORE updating state
+        let newJobsCount = 0;
+        let newJobIdList: string[] = [];
+        
+        setJobs(prev => {
+          const existingIds = new Set(prev.map(j => j.id));
+          const newJobs = fetchedJobs.filter(j => !existingIds.has(j.id));
+          newJobsCount = newJobs.length;
+          newJobIdList = newJobs.map(j => j.id);
+          
+          // Merge and sort by date (newest first)
+          return [...newJobs, ...prev].sort((a, b) => {
+            const dateA = a.date_posted ? new Date(a.date_posted).getTime() : 0;
+            const dateB = b.date_posted ? new Date(b.date_posted).getTime() : 0;
+            return dateB - dateA;
+          });
+        });
+        
+        // Handle notification and highlighting AFTER state update (in next tick)
+        if (newJobsCount > 0) {
+          // Use requestAnimationFrame to ensure state is updated
+          requestAnimationFrame(() => {
+            // Set new job IDs for highlighting
+            setNewJobIds(new Set(newJobIdList));
+            
+            // Show notification if requested
+            if (showNotification) {
+              setNotification(`${newJobsCount} new job${newJobsCount > 1 ? 's' : ''} found!`);
+              setTimeout(() => setNotification(null), 3000);
+            }
+            
+            // Clear highlight after 3 seconds
+            setTimeout(() => setNewJobIds(new Set()), 3000);
+          });
+        }
+      } else {
+        setJobs(fetchedJobs);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
     }
@@ -225,29 +278,48 @@ export default function Page() {
       if (inputTitle === settings?.titles) setInputTitle("");
       if (inputLocation === settings?.locations) setInputLocation("");
     }
-    setFilterPortal("all");
-    setFilterLocation("all");
+    // Reset multi-select filters when switching tabs
+    setFilterPortal([]);
+    setFilterLocation([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTabId]);
 
   const handleSearchComplete = useCallback((batchId: string) => {
+    // Track batch IDs per tab to preserve job history when re-fetching
     setTabs(prev => prev.map(t => {
       if (t.id === activeTabId) {
         const titles = inputTitle.split(',').map(s => s.trim()).filter(Boolean);
         let tabLabel = titles[0] || "Results";
         if (tabLabel.length > 18) tabLabel = tabLabel.substring(0, 15) + '...';
         if (titles.length > 1) tabLabel += ` +${titles.length - 1}`;
+        
+        // If this is already a result tab, add the new batch ID to the list
+        if (t.type === 'result') {
+          const existingBatchIds = t.batchIds || [t.id]; // Include original tab ID
+          return {
+            ...t,
+            label: tabLabel, // Update label with new search
+            batchIds: [...existingBatchIds, batchId] // Add new batch ID
+          };
+        }
+        
+        // For new tabs, create with batch ID tracking
         return {
           id: batchId,
           label: tabLabel,
           type: 'result',
-          query: t.query
+          query: t.query,
+          batchIds: [batchId]
         };
       }
       return t;
     }));
-    setActiveTabId(batchId);
-  }, [activeTabId, inputTitle]);
+    // Only update activeTabId if it was a new tab (not already a result tab)
+    const currentTab = tabs.find(t => t.id === activeTabId);
+    if (currentTab?.type !== 'result') {
+      setActiveTabId(batchId);
+    }
+  }, [activeTabId, inputTitle, tabs]);
 
   useEffect(() => {
     if (!pipelineJobId) return;
@@ -257,16 +329,21 @@ export default function Page() {
         setPipeline(data);
         if (data.state === "running" && data.stats?.batch_id) {
           setCurrentBatchId(data.stats.batch_id as string);
-          await fetchJobs(data.stats.batch_id as string);
+          // Fetch ALL jobs in merge mode during polling (not just current batch)
+          // This ensures other tabs show their jobs while fetching
+          await fetchJobs({ merge: true });
         }
         if (data.state === "done" || data.state === "failed") {
           setPipelineJobId("");
           setCurrentBatchId(null);
+          setFetchingTabId(null);  // Clear fetching tab when done
           if (data.state === "done" && data.stats?.batch_id) {
             handleSearchComplete(data.stats.batch_id as string);
           }
           if (data.state === "failed") setError("Job search failed. Check console.");
-          await fetchJobs();
+          // Final fetch to get all jobs including the just-completed batch
+          // Show notification for any new jobs found
+          await fetchJobs({ merge: true, showNotification: true });
         }
       } catch { 
         // Silently handle polling errors
@@ -326,6 +403,20 @@ export default function Page() {
     if (!inputTitle.trim()) { setError("Enter a job title"); return; }
     if (!inputLocation.trim()) { setError("Enter a location"); return; }
     if (inputSites.length === 0) { setError("Select a platform"); return; }
+    
+    // Rate limiting: Prevent rapid clicks (5 second minimum between fetches)
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastFetchTimeRef.current;
+    if (timeSinceLastFetch < 5000 && lastFetchTimeRef.current > 0) {
+      const waitTime = Math.ceil((5000 - timeSinceLastFetch) / 1000);
+      setError(`Please wait ${waitTime} second${waitTime > 1 ? 's' : ''} before fetching again`);
+      return;
+    }
+    lastFetchTimeRef.current = now;
+
+    // Track which tab initiated this fetch
+    const tabIdThatInitiatedFetch = activeTabId;
+    setFetchingTabId(tabIdThatInitiatedFetch);
 
     // Save query params to active tab now
     if (activeTabId) {
@@ -379,6 +470,7 @@ export default function Page() {
       setPipelineJobId(data.job_id);
     } catch (err) {
       setPipeline({ state: "failed", logs: ["Failed."], stats: {} });
+      setFetchingTabId(null);  // Clear on error
       setError(err instanceof Error ? err.message : 'Error starting search');
     } finally { setActionLoading(null); }
   }
@@ -428,22 +520,29 @@ export default function Page() {
       return [];
     }
 
+    // Get the current tab to check for batch IDs
+    const currentTab = tabs.find(t => t.id === activeTabId);
+    const tabBatchIds = currentTab?.batchIds || (currentTab?.type === 'result' ? [activeTabId] : null);
+
     return jobs.filter(j => {
       if (viewStatus === 'new' && j.status !== 'new') return false;
       if (viewStatus === 'saved' && j.status !== 'saved') return false;
       if (viewStatus === 'rejected' && j.status !== 'rejected') return false;
-      if (activeTabId !== 'all' && j.batch_id !== activeTabId) return false;
+      // For result tabs, check if job's batch_id is in the tab's batch IDs list
+      if (activeTabId !== 'all' && tabBatchIds && !tabBatchIds.includes(j.batch_id)) return false;
       return true;
     });
-  }, [jobs, viewStatus, activeTabId, pipeline?.state, currentBatchId]);
+  }, [jobs, viewStatus, activeTabId, pipeline?.state, currentBatchId, tabs]);
 
   const uniquePortals = useMemo(() => Array.from(new Set(baseJobs.map(j => j.source_site).filter(Boolean))).sort(), [baseJobs]);
   const uniqueLocations = useMemo(() => Array.from(new Set(baseJobs.map(j => j.location).filter(Boolean))).sort(), [baseJobs]);
 
+  // Multi-select filter logic: empty array means "all" selected (no filter)
   const displayJobs = useMemo(() => {
     return baseJobs.filter(j => {
-      if (filterPortal !== "all" && j.source_site !== filterPortal) return false;
-      if (filterLocation !== "all" && j.location !== filterLocation) return false;
+      // If filters are empty, show all; otherwise only show matching items
+      if (filterPortal.length > 0 && !filterPortal.includes(j.source_site)) return false;
+      if (filterLocation.length > 0 && !filterLocation.includes(j.location)) return false;
       return true;
     });
   }, [baseJobs, filterPortal, filterLocation]);
@@ -596,6 +695,9 @@ export default function Page() {
             viewStatus={viewStatus}
             activeTabId={activeTabId}
             isPipelineRunning={pipeline?.state === 'running'}
+            fetchingTabId={fetchingTabId}
+            newJobIds={newJobIds}
+            notification={notification}
             onSave={(id) => updateStatus(id, 'saved')}
             onReject={(id) => updateStatus(id, 'rejected')}
             onRestore={(id) => updateStatus(id, 'new')}

@@ -38,6 +38,7 @@ export type SearchTab = {
     keywordsInc: string;
     keywordsExc: string;
   };
+  batchIds?: string[];  // Track all batch IDs associated with this tab
 };
 
 // Pipeline Types

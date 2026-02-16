@@ -24,6 +24,7 @@ type JobCardProps = {
   job: JobRow;
   viewStatus: "new" | "saved" | "rejected";
   isDark: boolean;
+  isNewJob?: boolean;  // Whether this is a newly fetched job (for highlighting)
   onSave: (id: string) => void;
   onReject: (id: string) => void;
   onRestore: (id: string) => void;
@@ -73,6 +74,7 @@ const JobCard = memo(function JobCard({
   job,
   viewStatus,
   isDark,
+  isNewJob = false,
   onSave,
   onReject,
   onRestore,
@@ -80,9 +82,11 @@ const JobCard = memo(function JobCard({
 }: JobCardProps) {
   return (
     <div
-      className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 border-transparent hover:border-teal-500 ${
-        isDark ? "hover:bg-zinc-900/40" : "hover:bg-gray-50"
-      }`}
+      className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 ${
+        isNewJob 
+          ? 'border-teal-500 bg-teal-500/5 animate-highlight' 
+          : 'border-transparent hover:border-teal-500'
+      } ${isDark ? "hover:bg-zinc-900/40" : "hover:bg-gray-50"}`}
     >
       {/* Icon - Hidden on mobile */}
       <div
