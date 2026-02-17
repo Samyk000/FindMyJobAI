@@ -20,6 +20,7 @@ interface JobListProps {
   fetchingTabId: string | null;  // ID of the tab that initiated the fetch
   newJobIds: Set<string>;  // Set of newly fetched job IDs for highlighting
   notification: string | null;  // Toast notification message
+  onJobClick: (id: string) => void;  // Open job detail modal
   onSave: (id: string) => void;
   onReject: (id: string) => void;
   onRestore: (id: string) => void;
@@ -35,6 +36,7 @@ export default function JobList({
   fetchingTabId,
   newJobIds,
   notification,
+  onJobClick,
   onSave,
   onReject,
   onRestore,
@@ -128,6 +130,7 @@ export default function JobList({
               viewStatus={viewStatus}
               isDark={isDark}
               isNewJob={isNewJob}
+              onJobClick={onJobClick}
               onSave={onSave}
               onReject={onReject}
               onRestore={onRestore}

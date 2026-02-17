@@ -5,6 +5,7 @@ export type JobRow = {
   company: string;
   location: string;
   job_url: string;
+  description: string;
   is_remote: boolean;
   date_posted: string;
   source_site: string;
@@ -38,6 +39,10 @@ export type SearchTab = {
     keywordsExc: string;
   };
   batchIds?: string[];  // Track all batch IDs associated with this tab
+  filters?: {
+    portal: string[];
+    location: string[];
+  };
 };
 
 // Pipeline Types

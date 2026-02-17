@@ -129,8 +129,8 @@ def scrape_only(
                     "search_location": loc,
                 }
 
-                if data_mode == "compact":
-                    job["description"] = (job["description"] or "")[:1200]
+                # Note: Description is stored in full (no truncation)
+                # This ensures complete job information is always available
 
                 blob = _blob(job)
 
@@ -273,8 +273,8 @@ def scrape_jobs_incremental(
                     "search_location": loc,
                 }
 
-                if data_mode == "compact":
-                    job["description"] = (job["description"] or "")[:1200]
+                # Note: Description is stored in full (no truncation)
+                # This ensures complete job information is always available
 
                 blob = _blob(job)
 

@@ -25,6 +25,7 @@ type JobCardProps = {
   viewStatus: "new" | "saved" | "rejected";
   isDark: boolean;
   isNewJob?: boolean;  // Whether this is a newly fetched job (for highlighting)
+  onJobClick: (id: string) => void;  // Open job detail modal
   onSave: (id: string) => void;
   onReject: (id: string) => void;
   onRestore: (id: string) => void;
@@ -75,6 +76,7 @@ const JobCard = memo(function JobCard({
   viewStatus,
   isDark,
   isNewJob = false,
+  onJobClick,
   onSave,
   onReject,
   onRestore,
@@ -82,7 +84,8 @@ const JobCard = memo(function JobCard({
 }: JobCardProps) {
   return (
     <div
-      className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 ${
+      onClick={() => onJobClick(job.id)}
+      className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 cursor-pointer ${
         isNewJob 
           ? 'border-teal-500 bg-teal-500/5 animate-highlight' 
           : 'border-transparent hover:border-teal-500'
@@ -151,7 +154,7 @@ const JobCard = memo(function JobCard({
             {viewStatus === "new" && (
               <>
                 <button
-                  onClick={() => onSave(job.id)}
+                  onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
                   aria-label={`Save job: ${job.title}`}
                   className={`btn-accept p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                     isDark
@@ -162,7 +165,7 @@ const JobCard = memo(function JobCard({
                   <CheckCircle2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => onReject(job.id)}
+                  onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
                   aria-label={`Reject job: ${job.title}`}
                   className={`btn-reject p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                     isDark
@@ -176,7 +179,7 @@ const JobCard = memo(function JobCard({
             )}
             {viewStatus === "saved" && (
               <button
-                onClick={() => onReject(job.id)}
+                onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
                 aria-label={`Move to rejected: ${job.title}`}
                 className={`btn-icon p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                   isDark
@@ -189,7 +192,7 @@ const JobCard = memo(function JobCard({
             )}
             {viewStatus === "rejected" && (
               <button
-                onClick={() => onRestore(job.id)}
+                onClick={(e) => { e.stopPropagation(); onRestore(job.id); }}
                 aria-label={`Restore job: ${job.title}`}
                 className={`btn-icon p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                   isDark
@@ -201,7 +204,7 @@ const JobCard = memo(function JobCard({
               </button>
             )}
             <button
-              onClick={() => onDelete(job.id)}
+              onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
               aria-label={`Delete job: ${job.title}`}
               className={`btn-reject p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                 isDark
@@ -293,7 +296,7 @@ const JobCard = memo(function JobCard({
         {viewStatus === "new" && (
           <>
             <button
-              onClick={() => onSave(job.id)}
+              onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
               aria-label={`Save job: ${job.title}`}
               className={`btn-accept p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                 isDark
@@ -304,7 +307,7 @@ const JobCard = memo(function JobCard({
               <CheckCircle2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => onReject(job.id)}
+              onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
               aria-label={`Reject job: ${job.title}`}
               className={`btn-reject p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                 isDark
@@ -318,7 +321,7 @@ const JobCard = memo(function JobCard({
         )}
         {viewStatus === "saved" && (
           <button
-            onClick={() => onReject(job.id)}
+            onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
             aria-label={`Move to rejected: ${job.title}`}
             className={`btn-icon p-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
               isDark
@@ -331,7 +334,7 @@ const JobCard = memo(function JobCard({
         )}
         {viewStatus === "rejected" && (
           <button
-            onClick={() => onRestore(job.id)}
+            onClick={(e) => { e.stopPropagation(); onRestore(job.id); }}
             aria-label={`Restore job: ${job.title}`}
             className={`btn-icon p-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
               isDark
@@ -343,7 +346,7 @@ const JobCard = memo(function JobCard({
           </button>
         )}
         <button
-          onClick={() => onDelete(job.id)}
+          onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
           aria-label={`Delete job: ${job.title}`}
           className={`btn-reject p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
             isDark

@@ -29,6 +29,7 @@ import ErrorToast from "../components/ErrorToast";
 import LoadingScreen from "../components/LoadingScreen";
 import SettingsModal from "../components/SettingsModal";
 import ClearConfirmModal from "../components/ClearConfirmModal";
+import JobDetailModal from "../components/JobDetailModal";
 import DesktopSidebar from "../components/DesktopSidebar";
 import TabsBar, { MobileHeader } from "../components/TabsBar";
 import FilterBar from "../components/FilterBar";
@@ -87,6 +88,10 @@ export default function Page() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [clearingData, setClearingData] = useState(false);
+
+  // Job detail modal state
+  const [selectedJob, setSelectedJob] = useState<JobRow | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Mobile state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -257,17 +262,58 @@ export default function Page() {
     }
   }, [settings, activeTabId]);
 
+  // Ref to track if we're loading filters (prevents save during load)
+  const isLoadingFiltersRef = useRef(false);
+
+  // Load filters from current tab when switching tabs
   useEffect(() => {
     const tab = tabs.find(t => t.id === activeTabId);
     if (tab?.type === 'new') {
       if (inputTitle === settings?.titles) setInputTitle("");
       if (inputLocation === settings?.locations) setInputLocation("");
     }
-    // Reset multi-select filters when switching tabs
-    setFilterPortal([]);
-    setFilterLocation([]);
+    // Load per-tab filter state
+    isLoadingFiltersRef.current = true;
+    if (tab?.filters) {
+      setFilterPortal(tab.filters.portal || []);
+      setFilterLocation(tab.filters.location || []);
+    } else {
+      // New tabs or tabs without saved filters start with no filters
+      setFilterPortal([]);
+      setFilterLocation([]);
+    }
+    // Reset the flag after a microtask to allow saving again
+    Promise.resolve().then(() => {
+      isLoadingFiltersRef.current = false;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTabId]);
+
+  // Save filters to current tab when they change
+  useEffect(() => {
+    // Don't save during initial render, when tabs are loading, or during filter load
+    if (tabs.length === 0 || isLoadingFiltersRef.current) return;
+    
+    setTabs(prev => prev.map(t => {
+      if (t.id === activeTabId) {
+        // Only update if filters actually changed
+        const currentFilters = t.filters || { portal: [], location: [] };
+        const portalChanged = JSON.stringify(currentFilters.portal) !== JSON.stringify(filterPortal);
+        const locationChanged = JSON.stringify(currentFilters.location) !== JSON.stringify(filterLocation);
+        
+        if (portalChanged || locationChanged) {
+          return {
+            ...t,
+            filters: {
+              portal: filterPortal,
+              location: filterLocation
+            }
+          };
+        }
+      }
+      return t;
+    }));
+  }, [filterPortal, filterLocation, activeTabId]);
 
   const handleSearchComplete = useCallback((batchId: string) => {
     // Track batch IDs per tab to preserve job history when re-fetching
@@ -500,6 +546,17 @@ export default function Page() {
     catch (err) { setJobs(old); setError(err instanceof Error ? err.message : 'Delete failed'); }
   }
 
+  // Handle job click to open detail modal
+  const handleJobClick = useCallback(async (jobId: string) => {
+    try {
+      const job = await fetchWithErrorCallback(`${BACKEND}/jobs/${jobId}`) as JobRow;
+      setSelectedJob(job);
+      setIsDetailModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load job details');
+    }
+  }, [BACKEND, fetchWithErrorCallback]);
+
   // -- FILTER LOGIC --
 
   const baseJobs = useMemo(() => {
@@ -713,6 +770,7 @@ export default function Page() {
             fetchingTabId={fetchingTabId}
             newJobIds={newJobIds}
             notification={notification}
+            onJobClick={handleJobClick}
             onSave={(id) => updateStatus(id, 'saved')}
             onReject={(id) => updateStatus(id, 'rejected')}
             onRestore={(id) => updateStatus(id, 'new')}
@@ -739,6 +797,19 @@ export default function Page() {
         onClose={() => setShowClearConfirmModal(false)}
         onConfirm={clearAllData}
         clearingData={clearingData}
+      />
+
+      {/* --- JOB DETAIL MODAL --- */}
+      <JobDetailModal
+        job={selectedJob}
+        isOpen={isDetailModalOpen}
+        isDark={isDark}
+        viewStatus={viewStatus}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSave={(id) => { updateStatus(id, 'saved'); }}
+        onReject={(id) => { updateStatus(id, 'rejected'); }}
+        onRestore={(id) => { updateStatus(id, 'new'); }}
+        onDelete={(id) => { deleteJob(id); }}
       />
     </div>
 

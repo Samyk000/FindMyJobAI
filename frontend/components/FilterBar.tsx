@@ -250,6 +250,7 @@ export default function FilterBar({
   });
 
   // Close dropdowns when clicking outside
+  // Using 'click' instead of 'mousedown' to allow tab clicks to propagate first
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (portalContainerRef.current && !portalContainerRef.current.contains(event.target as Node)) {
@@ -260,8 +261,8 @@ export default function FilterBar({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [setPortalDropdownOpen, setLocationDropdownOpen]);
 
   // Close dropdowns on escape key (global handler)
