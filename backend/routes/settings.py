@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from config import SUPPORTED_COUNTRIES, SUPPORTED_SITES
-from schemas import SettingsIn, ConnectIn
+from schemas import SettingsIn
 from services.job_service import SettingsService
-from utils.helpers import mask_api_key, sanitize_csv_input, sanitize_input
+from utils.helpers import sanitize_csv_input, sanitize_input
 
 logger = logging.getLogger("job-agent")
 
@@ -73,8 +73,6 @@ def get_settings(db: Session = Depends(get_db)):
     try:
         cfg = SettingsService.get_or_create_settings(db)
         return {
-            "connected": bool(cfg.connected),
-            "api_key_last5": cfg.api_key_last5 if cfg.connected else "",
             "titles": cfg.titles or "",
             "locations": cfg.locations or "",
             "country": cfg.country or "india",
@@ -132,58 +130,3 @@ def save_settings(payload: SettingsIn, db: Session = Depends(get_db)):
         logger.error(f"Failed to save settings: {e}")
         db.rollback()
         raise HTTPException(500, "Failed to save settings")
-
-
-@router.post("/connect")
-def connect(payload: ConnectIn, db: Session = Depends(get_db)):
-    """
-    Connect API key.
-    
-    Args:
-        payload: API key payload
-        db: Database session
-        
-    Returns:
-        Connection status
-    """
-    try:
-        cfg = SettingsService.update_settings(
-            db,
-            api_key=payload.api_key,
-            api_key_last5=mask_api_key(payload.api_key),
-            connected=True
-        )
-        return {"connected": True, "message": "API key connected successfully"}
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    except Exception as e:
-        logger.error(f"Failed to connect API key: {e}")
-        db.rollback()
-        raise HTTPException(500, "Failed to connect API key")
-
-
-@router.post("/disconnect")
-def disconnect(db: Session = Depends(get_db)):
-    """
-    Disconnect API key.
-    
-    Args:
-        db: Database session
-        
-    Returns:
-        Disconnection status
-    """
-    try:
-        SettingsService.update_settings(
-            db,
-            api_key="",
-            api_key_last5="",
-            connected=False
-        )
-        return {"connected": False, "message": "API key disconnected"}
-    except Exception as e:
-        logger.error(f"Failed to disconnect API key: {e}")
-        db.rollback()
-        raise HTTPException(500, "Failed to disconnect API key")

@@ -50,8 +50,7 @@ export function isSettingsModel(data: unknown): data is SettingsModel {
     typeof settings.include_keywords !== 'string' ||
     typeof settings.exclude_keywords !== 'string' ||
     typeof settings.results_per_site !== 'number' ||
-    typeof settings.hours_old !== 'number' ||
-    typeof settings.connected !== 'boolean'
+    typeof settings.hours_old !== 'number'
   ) {
     return false;
   }

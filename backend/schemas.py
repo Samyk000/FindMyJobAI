@@ -11,7 +11,6 @@ from config import (
     MAX_RESULTS_PER_SITE,
     MIN_HOURS_OLD,
     MAX_HOURS_OLD,
-    MIN_API_KEY_LENGTH,
     MAX_PAGINATION_LIMIT,
 )
 
@@ -48,20 +47,6 @@ class SettingsIn(BaseModel):
     def validate_hours(cls, v):
         """Validate hours old is within bounds."""
         return max(MIN_HOURS_OLD, min(v, MAX_HOURS_OLD))
-
-
-class ConnectIn(BaseModel):
-    """Schema for connecting an API key."""
-    api_key: str
-
-    @field_validator('api_key')
-    @classmethod
-    def validate_api_key(cls, v):
-        """Validate API key length."""
-        key = (v or "").strip()
-        if len(key) < MIN_API_KEY_LENGTH:
-            raise ValueError(f"API key must be at least {MIN_API_KEY_LENGTH} characters")
-        return key
 
 
 class RunScrapeIn(BaseModel):
@@ -142,8 +127,6 @@ class JobDetailOut(BaseModel):
 
 class SettingsOut(BaseModel):
     """Schema for settings output."""
-    connected: bool
-    api_key_last5: str
     titles: str
     locations: str
     country: str

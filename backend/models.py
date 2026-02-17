@@ -38,14 +38,11 @@ class JobDB(Base):
 class SettingsDB(Base):
     """
     Application settings database model.
-    Stores user preferences and API configuration.
+    Stores user preferences for job searching.
     """
     __tablename__ = "settings"
     
     key = Column(String, primary_key=True, default="config")
-    api_key = Column(String, default="")
-    api_key_last5 = Column(String, default="")
-    connected = Column(Boolean, default=False)
     titles = Column(String, default="")
     locations = Column(String, default="")
     country = Column(String, default="india")
@@ -59,4 +56,4 @@ class SettingsDB(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
-        return f"<SettingsDB(key={self.key}, connected={self.connected})>"
+        return f"<SettingsDB(key={self.key})>"

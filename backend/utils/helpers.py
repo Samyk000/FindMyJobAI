@@ -63,20 +63,6 @@ def sanitize_csv_input(text: str, max_length: int = 2000) -> str:
     return sanitize_input(text, max_length=max_length)
 
 
-def mask_api_key(api_key: str) -> str:
-    """
-    Mask API key, showing only last 5 characters.
-    
-    Args:
-        api_key: API key to mask
-        
-    Returns:
-        Masked API key string
-    """
-    key = (api_key or "").strip()
-    return f"***{key[-5:]}" if len(key) >= 5 else "***"
-
-
 def normalize_job_url(url: str) -> str:
     """
     Normalize a job URL for duplicate detection.

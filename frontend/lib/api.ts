@@ -267,25 +267,6 @@ export const apiClient = {
     return result;
   },
 
-  /**
-   * Connect API key
-   */
-  async connectApiKey(apiKey: string): Promise<{ ok: boolean; message: string }> {
-    return fetchWithTimeout(`${API_BASE_URL}/connect`, {
-      method: 'POST',
-      body: JSON.stringify({ api_key: apiKey }),
-    });
-  },
-
-  /**
-   * Disconnect API key
-   */
-  async disconnectApiKey(): Promise<{ ok: boolean; message: string }> {
-    return fetchWithTimeout(`${API_BASE_URL}/disconnect`, {
-      method: 'POST',
-    });
-  },
-
   // --- STATS ENDPOINT ---
 
   /**

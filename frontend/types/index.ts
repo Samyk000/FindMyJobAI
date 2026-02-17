@@ -23,7 +23,6 @@ export type SettingsModel = {
   sites: string[];
   results_per_site: number;
   hours_old: number;
-  connected: boolean;
 };
 
 // Tab Types

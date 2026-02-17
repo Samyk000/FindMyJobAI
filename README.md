@@ -58,7 +58,6 @@ linkedin-job-bot/
 │   │   ├── exceptions.py    # Custom exceptions
 │   │   └── helpers.py       # Helper functions
 │   └── job_bot.py           # Job scraping wrapper
-└── plans/                   # Project documentation
 ```
 
 ## Getting Started
