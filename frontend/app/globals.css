@@ -1052,6 +1052,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* New job highlight animation */
+/* Note: Removed 'forwards' fill-mode to allow border-teal-500 class to remain visible after animation */
 @keyframes highlight {
   0% {
     background-color: rgba(20, 184, 166, 0.2);
@@ -1063,12 +1064,13 @@ h1, h2, h3, h4, h5, h6 {
   }
   100% {
     background-color: transparent;
-    border-left-color: transparent;
+    /* border-left-color intentionally not set to transparent */
+    /* This allows the border-teal-500 class to remain visible after animation ends */
   }
 }
 
 .animate-highlight {
-  animation: highlight 3s ease-out forwards;
+  animation: highlight 3s ease-out;
 }
 
 /* --- Filter Change Transition --- */

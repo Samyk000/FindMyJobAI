@@ -87,7 +87,7 @@ const JobCard = memo(function JobCard({
       onClick={() => onJobClick(job.id)}
       className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 cursor-pointer ${
         isNewJob 
-          ? 'border-teal-500 bg-teal-500/5 animate-highlight' 
+          ? 'border-teal-500 bg-teal-500/5' 
           : 'border-transparent hover:border-teal-500'
       } ${isDark ? "hover:bg-zinc-900/40" : "hover:bg-gray-50"}`}
     >
