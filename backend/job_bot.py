@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
 from utils.helpers import format_search_location, matches_target_country, matches_query_location
+from services.title_expander import expand_titles, is_title_relevant
 
 # JobSpy import compatibility
 try:
@@ -35,7 +36,7 @@ def scrape_only(
     sites: List[str],
     titles_csv: str,
     locations_csv: str,
-    country: str = "india",  # <--- FIXED: Added country argument here
+    country: str = "india",
     include_keywords_csv: str,
     exclude_keywords_csv: str,
     results_per_site: int,
@@ -45,8 +46,9 @@ def scrape_only(
 ) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
     Scrapes jobs and returns normalized job dicts + stats.
-    No AI calls here.
+    Expands titles to cover related role variants.
     """
+    original_titles_csv = titles_csv
     titles = _clean_csv_like_list(titles_csv)
     locations = _clean_csv_like_list(locations_csv)
     include_kw = [k.lower() for k in _clean_csv_like_list(include_keywords_csv)]
@@ -64,8 +66,10 @@ def scrape_only(
     if not sites:
         sites = ["linkedin"]
 
-    log(f"Scrape plan: titles={len(titles)}, locations={len(locations)}, sites={len(sites)}, country={country}")
-    log("Scraping...")
+    # --- TITLE EXPANSION ---
+    expanded_titles_csv = expand_titles(original_titles_csv, max_expansions=8, include_original=True)
+    expanded_titles = _clean_csv_like_list(expanded_titles_csv)
+    log(f"Title expansion: '{original_titles_csv}' → {expanded_titles}")
 
     raw_total = 0
     kept_total = 0
@@ -78,12 +82,11 @@ def scrape_only(
     c_code = country.lower().strip()
     if c_code in ["us", "united states"]: c_code = "usa"
     if c_code in ["united kingdom"]: c_code = "uk"
-    # 'india' and others usually work as-is
 
-    for t_i, title in enumerate(titles, start=1):
+    for t_i, title in enumerate(expanded_titles, start=1):
         for l_i, loc in enumerate(locations, start=1):
             search_loc = format_search_location(loc, country)
-            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}')")
+            log(f"Query {t_i}/{len(expanded_titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}')")
             try:
                 df = scrape_jobs(
                     site_name=sites,
@@ -92,7 +95,7 @@ def scrape_only(
                     results_wanted=results_per_site,
                     hours_old=hours_old,
                     linkedin_fetch_description=True,
-                    country_indeed=c_code, # <--- PASSING IT HERE
+                    country_indeed=c_code,
                     verbose=0,
                 )
             except Exception as e:
@@ -112,16 +115,8 @@ def scrape_only(
                     filtered_out += 1
                     continue
 
-                # Strict dynamic title filtering (case-insensitive substring check)
-                title_lower = title_r.lower()
-                matches_title = False
-                for t in titles:
-                    t_clean = t.lower().strip()
-                    if t_clean and t_clean in title_lower:
-                        matches_title = True
-                        break
-                
-                if not matches_title:
+                # --- RELEVANCE FILTERING ---
+                if not is_title_relevant(title_r, original_titles_csv, expanded_titles, threshold=0.25):
                     filtered_out += 1
                     continue
 
@@ -158,9 +153,6 @@ def scrape_only(
                     "search_title": title,
                     "search_location": loc,
                 }
-
-                # Note: Description is stored in full (no truncation)
-                # This ensures complete job information is always available
 
                 blob = _blob(job)
 
@@ -204,6 +196,7 @@ def scrape_jobs_incremental(
     """
     Scrapes jobs and calls on_job_found callback for each discovered job.
     Enables incremental saving for real-time UI updates.
+    Expands titles to cover related role variants.
     
     Args:
         on_job_found: Callback function that receives a job dict and returns True if new, False if duplicate
@@ -212,6 +205,7 @@ def scrape_jobs_incremental(
     Returns:
         Stats dict with raw_total, kept_total, filtered_out
     """
+    original_titles_csv = titles_csv
     titles = _clean_csv_like_list(titles_csv)
     locations = _clean_csv_like_list(locations_csv)
     include_kw = [k.lower() for k in _clean_csv_like_list(include_keywords_csv)]
@@ -229,10 +223,15 @@ def scrape_jobs_incremental(
     if not sites:
         sites = ["linkedin"]
 
-    total_queries = len(titles) * len(locations)
+    # --- TITLE EXPANSION ---
+    expanded_titles_csv = expand_titles(original_titles_csv, max_expansions=8, include_original=True)
+    expanded_titles = _clean_csv_like_list(expanded_titles_csv)
+    log(f"Title expansion: '{original_titles_csv}' → {expanded_titles}")
+
+    total_queries = len(expanded_titles) * len(locations)
     current_query = 0
 
-    log(f"Scrape plan: titles={len(titles)}, locations={len(locations)}, sites={len(sites)}, country={country}")
+    log(f"Scrape plan: titles={len(expanded_titles)}, locations={len(locations)}, sites={len(sites)}, country={country}")
     log("Scraping with real-time updates...")
 
     raw_total = 0
@@ -246,7 +245,7 @@ def scrape_jobs_incremental(
     if c_code in ["united kingdom"]: c_code = "uk"
 
     cancelled = False
-    for t_i, title in enumerate(titles, start=1):
+    for t_i, title in enumerate(expanded_titles, start=1):
         if is_cancelled and is_cancelled():
             cancelled = True
             break
@@ -255,15 +254,13 @@ def scrape_jobs_incremental(
                 cancelled = True
                 break
             current_query += 1
-            # Show all sites being scraped (JobSpy scrapes all sites simultaneously)
             current_site = ", ".join(sites) if sites else ""
             
-            # Report progress before scraping
             if on_progress:
                 on_progress(current_query, total_queries, current_site)
             
             search_loc = format_search_location(loc, country)
-            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}') via {current_site}")
+            log(f"Query {t_i}/{len(expanded_titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}') via {current_site}")
             try:
                 df = scrape_jobs(
                     site_name=sites,
@@ -292,16 +289,8 @@ def scrape_jobs_incremental(
                     filtered_out += 1
                     continue
 
-                # Strict dynamic title filtering (case-insensitive substring check)
-                title_lower = title_r.lower()
-                matches_title = False
-                for t in titles:
-                    t_clean = t.lower().strip()
-                    if t_clean and t_clean in title_lower:
-                        matches_title = True
-                        break
-                
-                if not matches_title:
+                # --- RELEVANCE FILTERING ---
+                if not is_title_relevant(title_r, original_titles_csv, expanded_titles, threshold=0.25):
                     filtered_out += 1
                     continue
 
@@ -338,9 +327,6 @@ def scrape_jobs_incremental(
                     "search_title": title,
                     "search_location": loc,
                 }
-
-                # Note: Description is stored in full (no truncation)
-                # This ensures complete job information is always available
 
                 blob = _blob(job)
 
