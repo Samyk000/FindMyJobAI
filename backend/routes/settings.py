@@ -6,8 +6,9 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
-from database import get_db
+from database import get_db, engine
 from config import SUPPORTED_COUNTRIES, SUPPORTED_SITES
 from schemas import SettingsIn
 from services.job_service import SettingsService
@@ -22,12 +23,25 @@ router = APIRouter(prefix="", tags=["settings"])
 @router.get("/health")
 def health_check():
     """
-    Health check endpoint.
+    Health check endpoint. Verifies database connectivity.
     
     Returns:
-        Status dictionary with timestamp
+        Status dictionary with timestamp and DB status
     """
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+    db_ok = False
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception as e:
+        logger.error(f"Health check DB error: {e}")
+    
+    status = "ok" if db_ok else "degraded"
+    result = {"status": status, "timestamp": datetime.now(timezone.utc).isoformat()}
+    if not db_ok:
+        result["database"] = "unavailable"
+    
+    return result
 
 
 @router.get("/api/countries")

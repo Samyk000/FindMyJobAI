@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef } from "react";
 import {
@@ -155,7 +155,7 @@ export default function MobileNav({
               Job<span className="text-teal-500">ify</span>
             </span>
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className={`btn-icon p-1.5 rounded-md ${
               isDark
@@ -284,7 +284,7 @@ export default function MobileNav({
                     </span>
                   )}
                   <div className="h-3.5" />
-                  <button
+                  <button type="button"
                     onClick={() => {
                       const newSites = inputSites.includes(site)
                         ? inputSites.filter((s) => s !== site)
@@ -396,7 +396,7 @@ export default function MobileNav({
 
           {/* Search Settings - Row 2: Filter */}
           <div className="flex items-center gap-2">
-            <button
+            <button type="button"
               onClick={() => setShowMoreOptions(!showMoreOptions)}
               className={`flex-1 py-2 rounded-md border text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${
                 showMoreOptions
@@ -471,7 +471,7 @@ export default function MobileNav({
           
           {/* Fetch/Cancel Button */}
           {isFetching ? (
-            <button
+            <button type="button"
               onClick={() => {
                 onCancel?.();
                 onClose();
@@ -482,7 +482,7 @@ export default function MobileNav({
               Cancel Fetch
             </button>
           ) : (
-            <button
+            <button type="button"
               onClick={() => {
                 onFetch();
                 onClose();

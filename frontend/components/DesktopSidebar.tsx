@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { 
@@ -219,7 +219,7 @@ export default function DesktopSidebar({
 
         <div className="space-y-2 pt-2">
           <div className={`border rounded-lg overflow-hidden ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-gray-300'}`}>
-            <button 
+            <button type="button" 
               onClick={() => setShowMoreOptions(!showMoreOptions)} 
               aria-expanded={showMoreOptions}
               aria-controls="filter-keywords-panel"

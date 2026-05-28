@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Loader2, Clock, Zap } from "lucide-react";
 
 // --- TYPES ---
 
@@ -22,26 +22,58 @@ type ProgressBarProps = {
   isDark: boolean;
 };
 
+// --- HELPERS ---
+
+function formatTime(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
 // --- MAIN COMPONENT ---
 
 export default function ProgressBar({ stats, logs, isDark }: ProgressBarProps) {
+  const [elapsed, setElapsed] = useState(0);
+  
   // Extract values with defaults
   const newJobs = stats.new_jobs || 0;
   const duplicates = stats.duplicates || 0;
   const currentQuery = stats.current_query || 0;
   const totalQueries = stats.total_queries || 1;
   const sitesStr = stats.current_site || "";
+  const startedAt = stats.started_at || Date.now();
   
   // Parse sites
   const sites = sitesStr.split(',').map(s => s.trim()).filter(Boolean);
   
   // Calculate progress percentage
   const progress = totalQueries > 0 ? Math.round((currentQuery / totalQueries) * 100) : 0;
+  
+  // Calculate elapsed and estimated time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = now - startedAt;
+      setElapsed(elapsedMs / 1000);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+  
+  // Estimate remaining time based on progress
+  const estimatedTotal = progress > 0 ? (elapsed / progress) * 100 : 0;
+  const remaining = Math.max(0, estimatedTotal - elapsed);
+  
+  // Determine status message
+  const getStatusMessage = () => {
+    if (currentQuery === 0) return "Initializing search...";
+    if (progress < 100) return `Searching across ${sites.length} platform${sites.length !== 1 ? 's' : ''}...`;
+    return "Finalizing results...";
+  };
 
   return (
-    <div 
+    <output 
       className={`fixed bottom-0 left-0 right-0 z-[100] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'} border-t shadow-lg`}
-      role="status"
       aria-live="polite"
     >
       {/* Content */}
@@ -55,11 +87,25 @@ export default function ProgressBar({ stats, logs, isDark }: ProgressBarProps) {
             </div>
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Searching jobs...
+                {getStatusMessage()}
               </p>
-              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-                {currentQuery} of {totalQueries} queries
-              </p>
+              <div className="flex items-center gap-3">
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+                  Query {currentQuery} of {totalQueries}
+                </p>
+                {elapsed > 0 && (
+                  <p className={`text-xs flex items-center gap-1 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>
+                    <Clock className="w-3 h-3" />
+                    {formatTime(elapsed)} elapsed
+                  </p>
+                )}
+                {progress > 10 && progress < 100 && (
+                  <p className={`text-xs flex items-center gap-1 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>
+                    <Zap className="w-3 h-3" />
+                    ~{formatTime(remaining)} left
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -120,6 +166,6 @@ export default function ProgressBar({ stats, logs, isDark }: ProgressBarProps) {
           </span>
         </div>
       </div>
-    </div>
+    </output>
   );
 }

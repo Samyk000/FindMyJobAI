@@ -104,7 +104,7 @@ def run_scrape(request: Request, payload: RunScrapeIn, bg: BackgroundTasks, db: 
         raise
     except Exception as e:
         logger.error(f"Failed to start scrape: {e}")
-        raise HTTPException(500, f"Failed to start scrape: {str(e)}")
+        raise HTTPException(500, "Failed to start scrape")
 
 
 @router.get("/logs/{job_id}")
@@ -167,5 +167,5 @@ def cancel_scrape(job_id: str):
         raise
     except Exception as e:
         logger.error(f"Failed to cancel job {job_id}: {e}")
-        raise HTTPException(500, f"Failed to cancel job: {str(e)}")
+        raise HTTPException(500, "Failed to cancel job")
 

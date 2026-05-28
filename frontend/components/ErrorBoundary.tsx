@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -100,13 +100,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
             {/* Action Buttons */}
             <div className="flex gap-3 justify-center">
-              <button
+              <button type="button"
                 onClick={this.handleRetry}
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Try Again
               </button>
-              <button
+              <button type="button"
                 onClick={this.handleReload}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
               >

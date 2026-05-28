@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -350,9 +350,8 @@ export default function EmptyState({
   };
 
   return (
-    <div 
+    <output 
       className="empty-state-enter flex flex-col items-center justify-center h-full py-12 px-4"
-      role="status"
       aria-live="polite"
       aria-label={displayTitle}
     >
@@ -373,7 +372,7 @@ export default function EmptyState({
       
       {/* Optional Action Button */}
       {action && (
-        <button
+        <button type="button"
           onClick={action.onClick}
           className={`btn-primary mt-5 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
             isDark 
@@ -384,6 +383,6 @@ export default function EmptyState({
           {action.label}
         </button>
       )}
-    </div>
+    </output>
   );
 }

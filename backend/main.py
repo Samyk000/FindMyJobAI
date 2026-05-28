@@ -6,6 +6,7 @@ It sets up the FastAPI application, configures middleware, and includes routers.
 """
 import logging
 import traceback
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,11 +28,24 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from middleware.rate_limit import limiter
 
+
+# --- LIFESPAN ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database on startup."""
+    logger.info("Starting Job Bot API...")
+    init_db()
+    logger.info("Job Bot API started successfully")
+    yield
+    logger.info("Shutting down Job Bot API...")
+
+
 # --- APP SETUP ---
 app = FastAPI(
     title="Job Bot Pro API",
     description="Job search and aggregation API",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 app.state.limiter = limiter
 
@@ -64,8 +78,16 @@ async def jobbot_error_handler(request: Request, exc: JobBotError):
 
     """Handle all custom Job Bot errors."""
     logger.error(f"JobBotError: {exc.message} - {exc.detail}")
+    if isinstance(exc, RateLimitError):
+        status_code = 429
+    elif isinstance(exc, ValidationError):
+        status_code = 400
+    elif isinstance(exc, NotFoundError):
+        status_code = 404
+    else:
+        status_code = 500
     return JSONResponse(
-        status_code=400 if isinstance(exc, ValidationError) else 404 if isinstance(exc, NotFoundError) else 500,
+        status_code=status_code,
         content=exc.to_dict()
     )
 
@@ -83,15 +105,6 @@ async def general_exception_handler(request: Request, exc: Exception):
             "detail": str(exc) if logging.DEBUG >= logging.root.level else "An unexpected error occurred"
         }
     )
-
-
-# --- STARTUP EVENT ---
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database on startup."""
-    logger.info("Starting Job Bot API...")
-    init_db()
-    logger.info("Job Bot API started successfully")
 
 
 # --- INCLUDE ROUTERS ---

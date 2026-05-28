@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Clock, Building2, Sparkles, Loader2 } from "lucide-react";
+import { MapPin, Clock, Building2, Sparkles, Loader2, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import { JobRow } from '@/types';
 import SkeletonJobRow from './SkeletonJobRow';
@@ -113,11 +113,16 @@ export default function JobList({
       <div className={`divide-y stagger-children job-list-container ${isDark ? 'divide-zinc-900' : 'divide-gray-100'}`}>
         {/* Loading more indicator at the top */}
         {showLoadingMore && (
-          <div className={`flex items-center justify-center gap-2 py-3 ${isDark ? 'bg-zinc-900/50' : 'bg-gray-50'}`}>
-            <Loader2 className="w-4 h-4 animate-spin text-teal-500" />
-            <span className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-              Checking for new jobs...
-            </span>
+          <div className={`wave-bar mx-2 mt-2 mb-1 rounded-xl px-4 py-3 ${isDark ? 'bg-zinc-900/90' : 'bg-gray-50'}`}>
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <Loader2 className={`w-4 h-4 animate-spin ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
+              <span className={`text-sm font-medium ${isDark ? 'text-teal-200' : 'text-teal-700'}`}>
+                Scanning for new jobs...
+              </span>
+              <span className={`text-xs font-medium ml-4 ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                {displayJobs.length} found
+              </span>
+            </div>
           </div>
         )}
         

@@ -243,6 +243,24 @@ class JobService:
         return count
     
     @staticmethod
+    def clear_jobs_by_status(db: Session, status: str) -> int:
+        """
+        Delete jobs by status from the database.
+        
+        Args:
+            db: Database session
+            status: Job status to delete (e.g., "new", "saved", "rejected")
+            
+        Returns:
+            Number of jobs deleted
+        """
+        count = db.query(JobDB).filter(JobDB.status == status).count()
+        db.query(JobDB).filter(JobDB.status == status).delete()
+        db.commit()
+        
+        return count
+    
+    @staticmethod
     def search_jobs(
         db: Session,
         status: str = "active",

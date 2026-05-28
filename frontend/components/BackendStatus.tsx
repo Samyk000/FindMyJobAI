@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { CONFIG } from '@/lib/config';
@@ -131,7 +131,7 @@ export function BackendStatus({ children }: Props) {
             <p className="text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
               {error}
             </p>
-            <button
+            <button type="button"
               onClick={() => {
                 setStatus('connecting');
                 setError('');

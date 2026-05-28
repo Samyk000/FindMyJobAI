@@ -87,6 +87,7 @@ export default function Page() {
   });
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [clearType, setClearType] = useState<"all" | "search">("all");
   const [clearingData, setClearingData] = useState(false);
 
   // Job detail modal state
@@ -98,6 +99,14 @@ export default function Page() {
 
   // Debounce tracking for rapid clicks
   const debounceRef = useRef<Record<string, number>>({});
+  
+  // Ref for tabs to avoid stale closures
+  const tabsRef = useRef(tabs);
+  useEffect(() => { tabsRef.current = tabs; }, [tabs]);
+  
+  // Ref for viewStatus to avoid stale closures in fetchJobs
+  const viewStatusRef = useRef(viewStatus);
+  useEffect(() => { viewStatusRef.current = viewStatus; }, [viewStatus]);
 
   // -- EFFECTS --
 
@@ -172,7 +181,7 @@ export default function Page() {
     const { batchId, merge = false, showNotification = false } = options || {};
     try {
       const data = await apiClient.getJobs({
-        status: viewStatus === 'new' ? 'active' : viewStatus,
+        status: viewStatusRef.current === 'new' ? 'active' : viewStatusRef.current,
         limit: 500,
         batch_id: batchId || undefined
       });
@@ -218,7 +227,7 @@ export default function Page() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
     }
-  }, [viewStatus]);
+  }, []);
 
   useEffect(() => {
     async function bootstrap() {
@@ -336,11 +345,11 @@ export default function Page() {
       return t;
     }));
     // Only update activeTabId if it was a new tab (not already a result tab)
-    const currentTab = tabs.find(t => t.id === activeTabId);
+    const currentTab = tabsRef.current.find(t => t.id === activeTabId);
     if (currentTab?.type !== 'result') {
       setActiveTabId(batchId);
     }
-  }, [activeTabId, inputTitle, tabs]);
+  }, [activeTabId, inputTitle]);
 
   useEffect(() => {
     if (!pipelineJobId) return;
@@ -403,6 +412,19 @@ export default function Page() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear data');
       setClearingData(false);
+    }
+  }
+
+  async function clearSearchData() {
+    setShowClearConfirmModal(false);
+    setShowSettingsModal(false);
+    try {
+      const result = await apiClient.clearSearchJobs();
+      setJobs(prev => prev.filter(j => j.status !== 'new'));
+      setNotification(result.message);
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear search jobs');
     }
   }
 
@@ -640,7 +662,7 @@ export default function Page() {
 
   if (!settings) {
     return (
-      <div className={`min-h-screen flex flex-col items-center justify-center p-4 ${isDark ? 'bg-zinc-950' : 'bg-gray-50'}`}>
+      <div className={`min-h-screen flex flex-col items-center justify-center p-4 ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
         <EmptyState 
           type="error" 
           isDark={isDark}
@@ -657,7 +679,7 @@ export default function Page() {
 
   return (
     <>
-    <div className={`flex h-screen font-sans overflow-hidden theme-transition ${isDark ? 'bg-zinc-950 text-zinc-300' : 'bg-white text-gray-700'}`}>
+    <div className={`flex h-screen font-sans overflow-hidden theme-transition ${isDark ? 'bg-black text-zinc-300' : 'bg-white text-gray-700'}`}>
       <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -726,7 +748,7 @@ export default function Page() {
       />
 
       {/* --- MAIN AREA --- */}
-      <div className={`flex-1 flex flex-col min-w-0 pt-14 lg:pt-0 ${isDark ? 'bg-zinc-950' : 'bg-gray-100'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 pt-14 lg:pt-0 ${isDark ? 'bg-black' : 'bg-gray-100'}`}>
 
         {/* HEADER: TABS (Desktop Only) */}
         <TabsBar
@@ -800,7 +822,9 @@ export default function Page() {
         onClose={() => setShowSettingsModal(false)}
         onToggleTheme={toggleTheme}
         onClearData={clearAllData}
-        onShowClearConfirm={() => setShowClearConfirmModal(true)}
+        onClearSearch={clearSearchData}
+        onShowClearConfirm={() => { setClearType("all"); setShowClearConfirmModal(true); }}
+        onShowClearSearchConfirm={() => { setClearType("search"); setShowClearConfirmModal(true); }}
         clearingData={clearingData}
       />
 
@@ -809,8 +833,19 @@ export default function Page() {
         isOpen={showClearConfirmModal}
         isDark={isDark}
         onClose={() => setShowClearConfirmModal(false)}
-        onConfirm={clearAllData}
+        onConfirm={clearType === "all" ? clearAllData : clearSearchData}
         clearingData={clearingData}
+        clearType={clearType}
+      />
+
+      {/* --- CLEAR CONFIRMATION MODAL --- */}
+      <ClearConfirmModal
+        isOpen={showClearConfirmModal}
+        isDark={isDark}
+        onClose={() => setShowClearConfirmModal(false)}
+        onConfirm={clearType === "all" ? clearAllData : clearSearchData}
+        clearingData={clearingData}
+        clearType={clearType}
       />
 
       {/* --- JOB DETAIL MODAL --- */}

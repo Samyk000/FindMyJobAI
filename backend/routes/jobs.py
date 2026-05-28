@@ -3,12 +3,14 @@ Job routes for the Job Bot API.
 Contains endpoints for job CRUD operations.
 """
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
 from schemas import JobFilter, JobUpdate
 from services.job_service import JobService
+from middleware.rate_limit import limiter
+from config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW
 
 logger = logging.getLogger("job-agent")
 
@@ -105,12 +107,14 @@ def update_job(job_id: str, update: JobUpdate, db: Session = Depends(get_db)):
 
 
 @router.delete("/jobs/clear-all")
-def clear_all_jobs(reset_settings: bool = False, db: Session = Depends(get_db)):
+@limiter.limit(f"{RATE_LIMIT_REQUESTS} per {RATE_LIMIT_WINDOW} seconds")
+def clear_all_jobs(request: Request, reset_settings: bool = False, db: Session = Depends(get_db)):
     """
     Delete all jobs from the database.
     Optionally reset settings to defaults.
     
     Args:
+        request: FastAPI request object (required for slowapi)
         reset_settings: Whether to reset settings to defaults
         db: Database session
         
@@ -138,6 +142,34 @@ def clear_all_jobs(reset_settings: bool = False, db: Session = Depends(get_db)):
         logger.error(f"Failed to clear all jobs: {e}")
         db.rollback()
         raise HTTPException(500, "Failed to clear all jobs")
+
+
+@router.delete("/jobs/clear-search")
+@limiter.limit(f"{RATE_LIMIT_REQUESTS} per {RATE_LIMIT_WINDOW} seconds")
+def clear_search_jobs(request: Request, db: Session = Depends(get_db)):
+    """
+    Delete only search/new jobs from the database.
+    Keeps saved and rejected jobs intact.
+    
+    Args:
+        request: FastAPI request object (required for slowapi)
+        db: Database session
+        
+    Returns:
+        Success message with count of deleted jobs
+    """
+    try:
+        count = JobService.clear_jobs_by_status(db, "new")
+        logger.info(f"Cleared {count} search jobs from database")
+        return {
+            "ok": True,
+            "message": f"Cleared {count} search jobs successfully",
+            "count": count,
+        }
+    except Exception as e:
+        logger.error(f"Failed to clear search jobs: {e}")
+        db.rollback()
+        raise HTTPException(500, "Failed to clear search jobs")
 
 
 @router.delete("/jobs/{job_id}")

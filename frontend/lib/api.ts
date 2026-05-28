@@ -220,6 +220,18 @@ export const apiClient = {
     return result;
   },
 
+  /**
+   * Clear search jobs (keeps saved and rejected)
+   */
+  async clearSearchJobs(): Promise<{ ok: boolean; message: string; count: number }> {
+    const url = `${API_BASE_URL}/jobs/clear-search`;
+    const result = await fetchWithTimeout<{ ok: boolean; message: string; count: number }>(url, {
+      method: 'DELETE',
+    });
+    clearApiCache();
+    return result;
+  },
+
   // --- SEARCH ENDPOINTS ---
 
   /**

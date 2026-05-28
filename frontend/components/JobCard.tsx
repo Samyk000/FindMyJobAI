@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { memo } from "react";
 import {
@@ -85,6 +85,9 @@ const JobCard = memo(function JobCard({
   return (
     <div
       onClick={() => onJobClick(job.id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onJobClick(job.id); } }}
+      role="button"
+      tabIndex={0}
       className={`group job-card flex items-start lg:items-center gap-2 lg:gap-4 p-2 lg:p-3 transition-all border-l-2 cursor-pointer ${
         isNewJob 
           ? 'border-teal-500 bg-teal-500/5' 
@@ -120,7 +123,7 @@ const JobCard = memo(function JobCard({
                 isDark ? "text-zinc-200" : "text-gray-800"
               }`}
             >
-              <button
+              <button type="button"
                 onClick={() => openUrl(job.job_url)}
                 className="hover:underline text-left cursor-pointer"
               >
@@ -153,7 +156,7 @@ const JobCard = memo(function JobCard({
           <div className="flex items-center gap-1 flex-shrink-0">
             {viewStatus === "new" && (
               <>
-                <button
+                <button type="button"
                   onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
                   aria-label={`Save job: ${job.title}`}
                   className={`btn-accept p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -164,7 +167,7 @@ const JobCard = memo(function JobCard({
                 >
                   <CheckCircle2 className="w-4 h-4" />
                 </button>
-                <button
+                <button type="button"
                   onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
                   aria-label={`Reject job: ${job.title}`}
                   className={`btn-reject p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -178,7 +181,7 @@ const JobCard = memo(function JobCard({
               </>
             )}
             {viewStatus === "saved" && (
-              <button
+              <button type="button"
                 onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
                 aria-label={`Move to rejected: ${job.title}`}
                 className={`btn-icon p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -191,7 +194,7 @@ const JobCard = memo(function JobCard({
               </button>
             )}
             {viewStatus === "rejected" && (
-              <button
+              <button type="button"
                 onClick={(e) => { e.stopPropagation(); onRestore(job.id); }}
                 aria-label={`Restore job: ${job.title}`}
                 className={`btn-icon p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -203,7 +206,7 @@ const JobCard = memo(function JobCard({
                 <RotateCcw className="w-4 h-4" />
               </button>
             )}
-            <button
+            <button type="button"
               onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
               aria-label={`Delete job: ${job.title}`}
               className={`btn-reject p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -228,7 +231,7 @@ const JobCard = memo(function JobCard({
                 isDark ? "text-zinc-200" : "text-gray-800"
               }`}
             >
-              <button
+              <button type="button"
                 onClick={() => openUrl(job.job_url)}
                 className="hover:underline text-left cursor-pointer"
               >
@@ -295,7 +298,7 @@ const JobCard = memo(function JobCard({
       >
         {viewStatus === "new" && (
           <>
-            <button
+            <button type="button"
               onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
               aria-label={`Save job: ${job.title}`}
               className={`btn-accept p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -306,7 +309,7 @@ const JobCard = memo(function JobCard({
             >
               <CheckCircle2 className="w-4 h-4" />
             </button>
-            <button
+            <button type="button"
               onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
               aria-label={`Reject job: ${job.title}`}
               className={`btn-reject p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -320,7 +323,7 @@ const JobCard = memo(function JobCard({
           </>
         )}
         {viewStatus === "saved" && (
-          <button
+          <button type="button"
             onClick={(e) => { e.stopPropagation(); onReject(job.id); }}
             aria-label={`Move to rejected: ${job.title}`}
             className={`btn-icon p-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -333,7 +336,7 @@ const JobCard = memo(function JobCard({
           </button>
         )}
         {viewStatus === "rejected" && (
-          <button
+          <button type="button"
             onClick={(e) => { e.stopPropagation(); onRestore(job.id); }}
             aria-label={`Restore job: ${job.title}`}
             className={`btn-icon p-1.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -345,7 +348,7 @@ const JobCard = memo(function JobCard({
             <RotateCcw className="w-4 h-4" />
           </button>
         )}
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(job.id); }}
           aria-label={`Delete job: ${job.title}`}
           className={`btn-reject p-1.5 rounded shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${

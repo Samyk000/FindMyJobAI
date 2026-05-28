@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { ChevronDown, Search, Loader2, Check, X } from "lucide-react";
@@ -289,17 +289,17 @@ export default function FilterBar({
   return (
     <div className={`h-auto lg:h-14 border-b flex items-center py-2 lg:py-0 px-3 lg:px-6 flex-shrink-0 ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-gray-200 bg-white'}`}>
       {/* Screen reader announcements */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      <output aria-live="polite" aria-atomic="true" className="sr-only">
         {portalAnnouncement}
-      </div>
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      </output>
+      <output aria-live="polite" aria-atomic="true" className="sr-only">
         {locationAnnouncement}
-      </div>
+      </output>
 
       <div className="flex items-center gap-1.5 lg:gap-3 w-full lg:w-auto lg:flex-1">
         {/* Status Tabs - Grouped in one background */}
         <div className={`flex items-center rounded-md p-0.5 lg:p-0 lg:gap-3 flex-shrink-0 ${isDark ? 'bg-zinc-800' : 'bg-gray-100 lg:bg-transparent'}`} role="tablist" aria-label="Job status filter">
-          <button 
+          <button type="button" 
             onClick={() => setViewStatus('new')} 
             role="tab"
             aria-selected={viewStatus === 'new'}
@@ -315,7 +315,7 @@ export default function FilterBar({
             }`}>
             new
           </button>
-          <button 
+          <button type="button" 
             onClick={() => setViewStatus('saved')} 
             role="tab"
             aria-selected={viewStatus === 'saved'}
@@ -331,7 +331,7 @@ export default function FilterBar({
             }`}>
             saved
           </button>
-          <button 
+          <button type="button" 
             onClick={() => setViewStatus('rejected')} 
             role="tab"
             aria-selected={viewStatus === 'rejected'}
@@ -355,7 +355,7 @@ export default function FilterBar({
         {/* Portal Filter - Multi-Select with Keyboard Navigation */}
         {uniquePortals.length > 0 && (
           <div ref={portalContainerRef} className="relative flex-shrink-0">
-            <button
+            <button type="button"
               ref={portalTriggerRef}
               onClick={(e) => { e.stopPropagation(); setPortalDropdownOpen(!portalDropdownOpen); }}
               onKeyDown={handlePortalKeyDown}
@@ -447,7 +447,7 @@ export default function FilterBar({
                 ))}
                 {/* Footer with close button */}
                 <li className={`border-t ${isDark ? 'border-zinc-700' : 'border-gray-200'}`} aria-hidden="true">
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setPortalDropdownOpen(false);
                       portalTriggerRef.current?.focus();
@@ -467,7 +467,7 @@ export default function FilterBar({
         {/* Location Filter - Multi-Select with Keyboard Navigation */}
         {uniqueLocations.length > 0 && (
           <div ref={locationContainerRef} className="relative flex-shrink-0">
-            <button
+            <button type="button"
               ref={locationTriggerRef}
               onClick={(e) => { e.stopPropagation(); setLocationDropdownOpen(!locationDropdownOpen); }}
               onKeyDown={handleLocationKeyDown}
@@ -559,7 +559,7 @@ export default function FilterBar({
                 ))}
                 {/* Footer with close button */}
                 <li className={`border-t ${isDark ? 'border-zinc-700' : 'border-gray-200'}`} aria-hidden="true">
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setLocationDropdownOpen(false);
                       locationTriggerRef.current?.focus();
@@ -578,7 +578,7 @@ export default function FilterBar({
 
         {/* Clear All Filters Button */}
         {hasActiveFilters && (
-          <button
+          <button type="button"
             onClick={clearAllFilters}
             aria-label="Clear all filters"
             className={`flex items-center gap-1 h-7 lg:h-8 px-2 rounded text-[10px] lg:text-[11px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
@@ -617,7 +617,7 @@ export default function FilterBar({
         
         {/* Fetch/Cancel Button */}
         {isFetching ? (
-          <button 
+          <button type="button" 
             onClick={onCancel} 
             aria-label="Cancel fetching jobs"
             className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 bg-red-600 hover:bg-red-700 text-white transition-colors duration-200">
@@ -625,7 +625,7 @@ export default function FilterBar({
             Cancel Fetch
           </button>
         ) : (
-          <button 
+          <button type="button" 
             onClick={onFetch} 
             aria-label="Fetch jobs"
             className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 transition-colors duration-200 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-teal-600 text-white hover:bg-teal-700'}`}>

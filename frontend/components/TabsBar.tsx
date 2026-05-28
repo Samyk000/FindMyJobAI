@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { Plus, X, Search, Settings, Briefcase } from "lucide-react";
@@ -32,7 +32,7 @@ export default function TabsBar({
       <div className={`lg:hidden border-b flex items-center justify-between px-2 py-1.5 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`} role="tablist" aria-label="Search tabs">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
           {tabs.map(tab => (
-            <button
+            <button type="button"
               key={tab.id}
               onClick={() => onTabClick(tab.id)}
               role="tab"
@@ -50,7 +50,7 @@ export default function TabsBar({
               {tab.label}
             </button>
           ))}
-          <button
+          <button type="button"
             onClick={onAddTab}
             aria-label="Add new search tab"
             className={`p-1 rounded-md transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
@@ -91,7 +91,7 @@ export default function TabsBar({
               }`}>
             <span className="truncate flex-1">{tab.label}</span>
             {tab.id !== 'all' && (
-              <button 
+              <button type="button" 
                 onClick={(e) => onCloseTab(tab.id, e)} 
                 aria-label={`Close ${tab.label} tab`}
                 className={`opacity-0 group-hover:opacity-100 p-0.5 rounded-full focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'hover:bg-zinc-800 hover:text-red-400' : 'hover:bg-gray-200 hover:text-red-500'}`}
@@ -101,7 +101,7 @@ export default function TabsBar({
             )}
           </div>
         ))}
-        <button 
+        <button type="button" 
           onClick={onAddTab} 
           aria-label="Add new search tab"
           className={`h-9 w-9 flex items-center justify-center rounded-t-lg transition-colors flex-shrink-0 mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-900' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-200'}`}
@@ -110,7 +110,7 @@ export default function TabsBar({
         </button>
       </div>
 
-      <button 
+      <button type="button" 
         onClick={onOpenSettings} 
         aria-label="Open settings"
         className={`h-9 w-9 flex items-center justify-center rounded-lg transition-colors mb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-200'}`}
@@ -133,7 +133,7 @@ export function MobileHeader({
 }) {
   return (
     <header className={`h-14 flex items-center justify-between px-4 border-b flex-shrink-0 lg:hidden fixed top-0 left-0 right-0 z-30 ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200'}`}>
-      <button
+      <button type="button"
         onClick={onMenuOpen}
         aria-label="Open navigation menu"
         className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
@@ -148,7 +148,7 @@ export function MobileHeader({
           Job<span className="text-teal-500">ify</span>
         </span>
       </div>
-      <button
+      <button type="button"
         onClick={onSettingsOpen}
         aria-label="Open settings"
         className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}

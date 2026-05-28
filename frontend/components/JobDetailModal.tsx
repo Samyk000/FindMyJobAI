@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { memo } from "react";
 import {
@@ -172,11 +172,13 @@ const JobDetailModal = memo(function JobDetailModal({
       aria-modal="true"
       aria-labelledby="job-detail-title"
       onClick={handleBackdropClick}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`modal-enter relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl border shadow-2xl focus-visible:outline-none flex flex-col ${
+        className={`modal-enter-fast relative w-full max-w-2xl max-h-[90vh] 
+overflow-hidden rounded-xl border shadow-2xl focus-visible:outline-none flex flex-col ${
           isDark
             ? "bg-zinc-900 border-zinc-700"
             : "bg-white border-gray-200"
@@ -215,7 +217,7 @@ const JobDetailModal = memo(function JobDetailModal({
                 </span>
               </div>
             </div>
-            <button
+            <button type="button"
               onClick={onClose}
               aria-label="Close modal"
               className={`p-2 rounded-lg transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -322,7 +324,7 @@ const JobDetailModal = memo(function JobDetailModal({
         >
           <div className="flex flex-wrap items-center gap-3">
             {/* Open Original Button */}
-            <button
+            <button type="button"
               onClick={handleOpenOriginal}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
                 isDark
@@ -340,7 +342,7 @@ const JobDetailModal = memo(function JobDetailModal({
             {/* Status Actions */}
             {viewStatus === "new" && (
               <>
-                <button
+                <button type="button"
                   onClick={() => {
                     onSave(job.id);
                     onClose();
@@ -355,7 +357,7 @@ const JobDetailModal = memo(function JobDetailModal({
                   <CheckCircle2 className="w-4 h-4" />
                   Save
                 </button>
-                <button
+                <button type="button"
                   onClick={() => {
                     onReject(job.id);
                     onClose();
@@ -374,7 +376,7 @@ const JobDetailModal = memo(function JobDetailModal({
             )}
 
             {viewStatus === "saved" && (
-              <button
+              <button type="button"
                 onClick={() => {
                   onReject(job.id);
                   onClose();
@@ -392,7 +394,7 @@ const JobDetailModal = memo(function JobDetailModal({
             )}
 
             {viewStatus === "rejected" && (
-              <button
+              <button type="button"
                 onClick={() => {
                   onRestore(job.id);
                   onClose();
@@ -410,7 +412,7 @@ const JobDetailModal = memo(function JobDetailModal({
             )}
 
             {/* Delete Button */}
-            <button
+            <button type="button"
               onClick={() => {
                 onDelete(job.id);
                 onClose();
