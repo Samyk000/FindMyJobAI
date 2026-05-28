@@ -4,7 +4,7 @@ Contains endpoints for job scraping and pipeline management.
 """
 import uuid
 import logging
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -13,7 +13,10 @@ from services.pipeline import pipeline_manager
 from services.scraper import ScraperService
 from services.job_service import SettingsService
 from utils.exceptions import ValidationError, NotFoundError
-from utils.helpers import sanitize_csv_input
+from utils.helpers import sanitize_query_input
+from middleware.rate_limit import limiter
+from config import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW
+
 
 logger = logging.getLogger("job-agent")
 
@@ -25,11 +28,14 @@ MAX_LOCATION_LENGTH = 200
 
 
 @router.post("/run/scrape")
-def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(get_db)):
+@limiter.limit(f"{RATE_LIMIT_REQUESTS} per {RATE_LIMIT_WINDOW} seconds")
+def run_scrape(request: Request, payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(get_db)):
+
     """
     Start a job scraping pipeline.
     
     Args:
+        request: FastAPI request object (required for slowapi)
         payload: Scrape parameters (optional overrides)
         bg: FastAPI background tasks
         db: Database session
@@ -40,10 +46,11 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
     try:
         cfg = SettingsService.get_or_create_settings(db)
         
-        # Apply ephemeral overrides with sanitization
-        titles = sanitize_csv_input(payload.titles, max_length=MAX_TITLE_LENGTH) if payload.titles else cfg.titles
-        locations = sanitize_csv_input(payload.locations, max_length=MAX_LOCATION_LENGTH) if payload.locations else cfg.locations
-        country = sanitize_csv_input(payload.country, max_length=100) if payload.country else cfg.country
+        # Apply ephemeral overrides with sanitization (no HTML-escaping)
+        titles = sanitize_query_input(payload.titles, max_length=MAX_TITLE_LENGTH) if payload.titles else cfg.titles
+        locations = sanitize_query_input(payload.locations, max_length=MAX_LOCATION_LENGTH) if payload.locations else cfg.locations
+        country = sanitize_query_input(payload.country, max_length=100) if payload.country else cfg.country
+
         hours_old = payload.hours_old or cfg.hours_old
         
         # Validate required fields
@@ -64,9 +71,9 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
                 field="locations"
             )
         
-        # Check if a scrape is already running
-        running_jobs = pipeline_manager.get_all_running()
-        if running_jobs:
+        # Check if a scrape is already running (atomic check-and-create)
+        job_id = pipeline_manager.create_if_none("scrape")
+        if not job_id:
             raise ValidationError(
                 "A scrape job is already running. Please wait for it to complete.",
                 detail="Only one scrape job can run at a time"
@@ -84,8 +91,7 @@ def run_scrape(payload: RunScrapeIn, bg: BackgroundTasks, db: Session = Depends(
             cfg, titles, locations, country, hours_old
         )
         
-        # Create pipeline and start worker
-        job_id = pipeline_manager.create("scrape")
+        # Start worker (pipeline already created atomically above)
         batch_id = str(uuid.uuid4())
         bg.add_task(ScraperService.run_scrape_worker, job_id, snapshot, batch_id)
         
@@ -126,3 +132,40 @@ def get_logs(job_id: str):
     except Exception as e:
         logger.error(f"Failed to get logs for {job_id}: {e}")
         raise HTTPException(500, "Failed to retrieve logs")
+
+
+@router.post("/run/cancel/{job_id}")
+def cancel_scrape(job_id: str):
+    """
+    Cancel a running scrape job.
+    
+    Args:
+        job_id: Pipeline job ID to cancel
+        
+    Returns:
+        Success message
+    """
+    try:
+        pipeline = pipeline_manager.get(job_id)
+        if not pipeline:
+            raise NotFoundError(
+                "Pipeline not found or expired",
+                resource_type="Pipeline",
+                resource_id=job_id
+            )
+            
+        if pipeline.get("state") != "running":
+            raise ValidationError(
+                f"Cannot cancel a pipeline in state: {pipeline.get('state')}",
+                field="state"
+            )
+            
+        pipeline_manager.cancel(job_id)
+        logger.info(f"Cancellation requested for job {job_id}")
+        return {"ok": True, "message": "Scrape job cancellation requested"}
+    except (ValidationError, NotFoundError):
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel job {job_id}: {e}")
+        raise HTTPException(500, f"Failed to cancel job: {str(e)}")
+

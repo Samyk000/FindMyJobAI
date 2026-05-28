@@ -24,10 +24,10 @@ interface DesktopSidebarProps {
   setInputCountry: (value: string) => void;
   inputSites: string[];
   setInputSites: (value: string[]) => void;
-  inputLimit: number;
-  setInputLimit: (value: number) => void;
-  inputHours: number;
-  setInputHours: (value: number) => void;
+  inputLimit: number | "";
+  setInputLimit: (value: number | "") => void;
+  inputHours: number | "";
+  setInputHours: (value: number | "") => void;
   inputKeywordsInc: string;
   setInputKeywordsInc: (value: string) => void;
   inputKeywordsExc: string;
@@ -60,11 +60,11 @@ export default function DesktopSidebar({
   return (
     <aside className={`hidden lg:flex w-80 border-r flex-col flex-shrink-0 z-20 ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-gray-50 border-gray-200'}`}>
       <div className={`h-14 flex items-center px-6 border-b flex-shrink-0 ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 bg-gradient-to-br from-teal-500 to-teal-600`}>
-          <Search className="w-4 h-4 text-white" />
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm`}>
+          <Briefcase className="w-4 h-4 text-white" />
         </div>
         <span className={`font-bold tracking-tight font-display ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          FindMyJob<span className="text-teal-500">AI</span>
+          Job<span className="text-teal-500">ify</span>
         </span>
       </div>
 
@@ -121,30 +121,40 @@ export default function DesktopSidebar({
         <div className={`h-px ${isDark ? 'bg-zinc-800/50' : 'bg-gray-200'}`} />
 
         <div className="space-y-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>Platforms</span>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>Platforms</span>
+          </div>
           <div className="grid grid-cols-3 gap-2" role="group" aria-label="Select job platforms">
             {JOB_PLATFORMS.map(site => (
-              <label key={site} className={`flex items-center gap-2 cursor-pointer p-2 rounded border text-xs font-medium transition-colors select-none focus-within:ring-2 focus-within:ring-teal-500 ${inputSites.includes(site)
-                ? 'bg-teal-500/10 border-teal-500 text-teal-600 dark:text-teal-400'
-                : isDark
-                  ? 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'
-                  : 'bg-white border-gray-300 text-gray-500 hover:border-gray-400'
-                }`}>
-                <input 
-                  type="checkbox" 
-                  className="sr-only" 
-                  checked={inputSites.includes(site)} 
-                  onChange={e => {
-                    const newSites = e.target.checked ? [...inputSites, site] : inputSites.filter(s => s !== site);
-                    setInputSites(newSites);
-                  }}
-                  aria-label={`${site.replace('_', ' ')} platform`}
-                />
-                {site === 'linkedin' && <Linkedin className="w-3 h-3" />}
-                {site === 'indeed' && <Briefcase className="w-3 h-3" />}
-                {site === 'glassdoor' && <Globe className="w-3 h-3" />}
-                <span className="capitalize truncate">{site.replace('_', ' ')}</span>
-              </label>
+              <div key={site} className="relative flex flex-col justify-end">
+                {site === 'glassdoor' && inputSites.includes('glassdoor') && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[8px] font-semibold text-red-500 dark:text-red-400 text-center select-none whitespace-nowrap leading-none">
+                    Not working currently
+                  </span>
+                )}
+                <div className="h-3.5" />
+                <label className={`flex items-center gap-2 cursor-pointer p-2 rounded border text-xs font-medium transition-colors select-none focus-within:ring-2 focus-within:ring-teal-500 ${inputSites.includes(site)
+                  ? 'bg-teal-500/10 border-teal-500 text-teal-600 dark:text-teal-400'
+                  : isDark
+                    ? 'bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    : 'bg-white border-gray-300 text-gray-500 hover:border-gray-400'
+                  }`}>
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={inputSites.includes(site)} 
+                    onChange={e => {
+                      const newSites = e.target.checked ? [...inputSites, site] : inputSites.filter(s => s !== site);
+                      setInputSites(newSites);
+                    }}
+                    aria-label={`${site.replace('_', ' ')} platform`}
+                  />
+                  {site === 'linkedin' && <Linkedin className="w-3 h-3" />}
+                  {site === 'indeed' && <Briefcase className="w-3 h-3" />}
+                  {site === 'glassdoor' && <Globe className="w-3 h-3" />}
+                  <span className="capitalize truncate">{site.replace('_', ' ')}</span>
+                </label>
+              </div>
             ))}
           </div>
         </div>
@@ -161,7 +171,21 @@ export default function DesktopSidebar({
                 value={inputLimit} 
                 min={5} 
                 max={100}
-                onChange={e => setInputLimit(Math.max(5, Math.min(100, parseInt(e.target.value) || 20)))} 
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setInputLimit('');
+                  } else {
+                    setInputLimit(parseInt(val) || 0);
+                  }
+                }}
+                onBlur={() => {
+                  if (inputLimit === '' || inputLimit < 5) {
+                    setInputLimit(5);
+                  } else if (inputLimit > 100) {
+                    setInputLimit(100);
+                  }
+                }}
               />
             </div>
             <div className={`border rounded-lg p-2.5 ${isDark ? 'bg-black border-zinc-800' : 'bg-white border-gray-300'}`}>
@@ -173,7 +197,21 @@ export default function DesktopSidebar({
                 value={inputHours} 
                 min={1} 
                 max={720}
-                onChange={e => setInputHours(Math.max(1, Math.min(720, parseInt(e.target.value) || 72)))} 
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setInputHours('');
+                  } else {
+                    setInputHours(parseInt(val) || 0);
+                  }
+                }}
+                onBlur={() => {
+                  if (inputHours === '' || inputHours < 1) {
+                    setInputHours(1);
+                  } else if (inputHours > 720) {
+                    setInputHours(720);
+                  }
+                }}
               />
             </div>
           </div>

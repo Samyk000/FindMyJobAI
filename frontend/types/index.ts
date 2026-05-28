@@ -47,7 +47,7 @@ export type SearchTab = {
 
 // Pipeline Types
 export type PipelineStatus = {
-  state: "unknown" | "running" | "done" | "failed";
+  state: "unknown" | "running" | "done" | "failed" | "cancelled";
   logs: string[];
   stats: Record<string, unknown>;
 };

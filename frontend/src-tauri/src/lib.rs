@@ -40,12 +40,12 @@ fn wait_for_backend(timeout_secs: u64) -> bool {
     let start = Instant::now();
     let timeout = Duration::from_secs(timeout_secs);
 
-    println!("[FindMyJobAI] Waiting for backend to start (timeout: {}s)...", timeout_secs);
+    println!("[Jobify] Waiting for backend to start (timeout: {}s)...", timeout_secs);
 
     while start.elapsed() < timeout {
         if is_backend_healthy() {
             println!(
-                "[FindMyJobAI] Backend ready in {:.1}s",
+                "[Jobify] Backend ready in {:.1}s",
                 start.elapsed().as_secs_f32()
             );
             return true;
@@ -53,7 +53,7 @@ fn wait_for_backend(timeout_secs: u64) -> bool {
         thread::sleep(Duration::from_millis(500));
     }
 
-    eprintln!("[FindMyJobAI] Backend did NOT start within {}s", timeout_secs);
+    eprintln!("[Jobify] Backend did NOT start within {}s", timeout_secs);
     false
 }
 
@@ -88,7 +88,7 @@ pub fn run() {
 
             // ----- Case 1: Backend already running (dev mode or second instance) -----
             if is_backend_healthy() {
-                println!("[FindMyJobAI] Backend already running — reusing");
+                println!("[Jobify] Backend already running — reusing");
                 app.manage(BackendState {
                     child: Mutex::new(None),
                 });
@@ -98,10 +98,10 @@ pub fn run() {
 
             // ----- Case 2: Port occupied by something else -----
             if !is_port_available() {
-                eprintln!("[FindMyJobAI] Port 8000 is in use by another application!");
+                eprintln!("[Jobify] Port 8000 is in use by another application!");
                 let _ = handle.emit(
                     "backend-error",
-                    "Port 8000 is already in use by another application. Please close it and restart FindMyJobAI.",
+                    "Port 8000 is already in use by another application. Please close it and restart Jobify.",
                 );
                 app.manage(BackendState {
                     child: Mutex::new(None),
@@ -110,18 +110,18 @@ pub fn run() {
             }
 
             // ----- Case 3: Launch the sidecar -----
-            println!("[FindMyJobAI] Starting backend sidecar...");
+            println!("[Jobify] Starting backend sidecar...");
 
             let sidecar_cmd = app
                 .shell()
                 .sidecar("backend")
                 .map_err(|e| {
-                    eprintln!("[FindMyJobAI] Failed to create sidecar command: {}", e);
+                    eprintln!("[Jobify] Failed to create sidecar command: {}", e);
                     e
                 })?;
 
             let (mut rx, child) = sidecar_cmd.spawn().map_err(|e| {
-                eprintln!("[FindMyJobAI] Failed to spawn sidecar: {}", e);
+                eprintln!("[Jobify] Failed to spawn sidecar: {}", e);
                 e
             })?;
 
@@ -153,7 +153,7 @@ pub fn run() {
                             eprintln!("[Backend] Process terminated: {:?}", status);
                             let _ = handle_for_output.emit(
                                 "backend-error",
-                                "Backend stopped unexpectedly. Please restart FindMyJobAI.",
+                                "Backend stopped unexpectedly. Please restart Jobify.",
                             );
                             break;
                         }
@@ -170,7 +170,7 @@ pub fn run() {
                 } else {
                     let _ = handle_for_health.emit(
                         "backend-error",
-                        "Backend failed to start within 45 seconds. Please restart FindMyJobAI.",
+                        "Backend failed to start within 45 seconds. Please restart Jobify.",
                     );
                 }
             });
@@ -180,21 +180,21 @@ pub fn run() {
         // ----- Cleanup on window close -----
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                println!("[FindMyJobAI] Window closing — shutting down backend...");
+                println!("[Jobify] Window closing — shutting down backend...");
                 let state = window.app_handle().state::<BackendState>();
 
                 if let Ok(mut guard) = state.child.lock() {
                     if let Some(child) = guard.take() {
                         match child.kill() {
-                            Ok(_) => println!("[FindMyJobAI] Backend process killed"),
-                            Err(e) => eprintln!("[FindMyJobAI] Failed to kill backend: {}", e),
+                            Ok(_) => println!("[Jobify] Backend process killed"),
+                            Err(e) => eprintln!("[Jobify] Failed to kill backend: {}", e),
                         }
                     } else {
-                        println!("[FindMyJobAI] No sidecar to kill (was using external backend)");
+                        println!("[Jobify] No sidecar to kill (was using external backend)");
                     }
                 };
             }
         })
         .run(tauri::generate_context!())
-        .expect("Fatal: failed to run FindMyJobAI");
+        .expect("Fatal: failed to run Jobify");
 }

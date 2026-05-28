@@ -94,3 +94,9 @@ frontend/src-tauri/binaries/
 plans/
 plans2/
 plans3/
+
+# Local databases and build specs
+*.db-shm
+*.db-wal
+*.spec
+agency-agents/

@@ -104,29 +104,6 @@ def update_job(job_id: str, update: JobUpdate, db: Session = Depends(get_db)):
         raise HTTPException(500, "Failed to update job")
 
 
-@router.delete("/jobs/{job_id}")
-def delete_job(job_id: str, db: Session = Depends(get_db)):
-    """
-    Delete a job.
-    
-    Args:
-        job_id: Job ID to delete
-        db: Database session
-        
-    Returns:
-        Success message
-    """
-    try:
-        JobService.delete_job(db, job_id)
-        return {"ok": True, "message": "Job deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to delete job {job_id}: {e}")
-        db.rollback()
-        raise HTTPException(500, "Failed to delete job")
-
-
 @router.delete("/jobs/clear-all")
 def clear_all_jobs(reset_settings: bool = False, db: Session = Depends(get_db)):
     """
@@ -161,6 +138,30 @@ def clear_all_jobs(reset_settings: bool = False, db: Session = Depends(get_db)):
         logger.error(f"Failed to clear all jobs: {e}")
         db.rollback()
         raise HTTPException(500, "Failed to clear all jobs")
+
+
+@router.delete("/jobs/{job_id}")
+def delete_job(job_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a job.
+    
+    Args:
+        job_id: Job ID to delete
+        db: Database session
+        
+    Returns:
+        Success message
+    """
+    try:
+        JobService.delete_job(db, job_id)
+        return {"ok": True, "message": "Job deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete job {job_id}: {e}")
+        db.rollback()
+        raise HTTPException(500, "Failed to delete job")
+
 
 
 @router.get("/stats")

@@ -56,7 +56,7 @@ export function BackendStatus({ children }: Props) {
         setStatus('error');
         setError(
           isTauri()
-            ? 'The search engine failed to start. Please close and reopen FindMyJobAI.'
+            ? 'The search engine failed to start. Please close and reopen Jobify.'
             : 'Cannot connect to the backend server. Please make sure it is running on port 8000.'
         );
         return;
@@ -113,7 +113,7 @@ export function BackendStatus({ children }: Props) {
           <>
             <div className="text-5xl mb-6">🔍</div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              FindMyJobAI
+              Jobify
             </h1>
             <div className="flex justify-center mb-4">
               <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />

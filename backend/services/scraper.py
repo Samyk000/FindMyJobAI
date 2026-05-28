@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Callable
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from database import SessionLocal
 from models import JobDB
@@ -77,18 +78,16 @@ class ScraperService:
                     job_data: Dictionary containing job information
                     
                 Returns:
-                    True if saved successfully, False if skipped or failed
+                    True if a NEW job was saved, False if skipped (duplicate) or failed
                 """
-                nonlocal count, duplicates
+                nonlocal count, duplicates, db
                 try:
                     # Get and normalize the job URL
                     raw_url = job_data.get("job_url", "")
                     normalized_url = normalize_job_url(raw_url)
                     
-                    # Skip if no valid URL (can't dedupe, but still save)
-                    # Actually, if URL is empty, we should still save the job
+                    # Check if a job with the same normalized URL already exists
                     if normalized_url:
-                        # Check if a job with the same normalized URL already exists
                         existing = db.query(JobDB).filter(
                             JobDB.job_url == normalized_url
                         ).first()
@@ -101,7 +100,7 @@ class ScraperService:
                                 "new_jobs": count,
                                 "duplicates": duplicates
                             })
-                            return True  # Return True because we handled it (by skipping)
+                            return False  # Return False = not a new job
                     
                     # Generate a unique ID for this job entry
                     job_entry_id = str(uuid.uuid4())
@@ -111,7 +110,7 @@ class ScraperService:
                         title=job_data.get("title", ""),
                         company=job_data.get("company", ""),
                         location=job_data.get("location", ""),
-                        job_url=normalized_url or raw_url,  # Use normalized URL, or raw if empty
+                        job_url=normalized_url or raw_url,
                         description=job_data.get("description", ""),
                         is_remote=job_data.get("is_remote", False),
                         date_posted=job_data.get("date_posted", ""),
@@ -130,10 +129,31 @@ class ScraperService:
                         "new_jobs": count,
                         "duplicates": duplicates
                     })
-                    return True
+                    return True  # Return True = new job saved
+                except IntegrityError:
+                    # Duplicate URL constraint violated - skip this job
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+                    duplicates += 1
+                    pipeline_manager.update(job_id, stats={
+                        "batch_id": batch_id,
+                        "new_jobs": count,
+                        "duplicates": duplicates
+                    })
+                    return False
                 except Exception as e:
                     logger.error(f"Failed to save job: {e}")
-                    db.rollback()
+                    try:
+                        db.rollback()
+                    except Exception:
+                        # Session is broken, recreate it
+                        try:
+                            db.close()
+                        except Exception:
+                            pass
+                        db = SessionLocal()
                     return False
             
             def progress_callback(current_query: int, total_queries: int, current_site: str):
@@ -151,6 +171,10 @@ class ScraperService:
                     "current_site": current_site,
                 })
             
+            def check_cancelled() -> bool:
+                p = pipeline_manager.get(job_id)
+                return p is not None and p.get("state") == "cancelled"
+
             log("Starting job scrape...")
             
             # Use the incremental scraping function
@@ -168,6 +192,7 @@ class ScraperService:
                     log=log,
                     on_job_found=save_job_callback,
                     on_progress=progress_callback,
+                    is_cancelled=check_cancelled,
                 )
             except Exception as scrape_error:
                 # Handle scraping-specific errors
@@ -192,13 +217,17 @@ class ScraperService:
                 })
                 return
             
-            pipeline_manager.update(job_id, state="done", stats={
+            final_state = "cancelled" if check_cancelled() else "done"
+            pipeline_manager.update(job_id, state=final_state, stats={
                 "batch_id": batch_id,
                 "new_jobs": count,
                 "duplicates": duplicates,
                 "total_scraped": stats.get("raw_total", 0) if stats else 0
             })
-            log(f"Complete. Added {count} new jobs ({duplicates} duplicates skipped).")
+            if final_state == "cancelled":
+                log("Job search cancelled by user.")
+            else:
+                log(f"Complete. Added {count} new jobs ({duplicates} duplicates skipped).")
             
         except Exception as e:
             logger.error(f"Scrape worker failed: {e}", exc_info=True)

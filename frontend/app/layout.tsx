@@ -26,10 +26,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FindMyJob - Job Search Aggregator",
+  title: "Jobify - Job Search Aggregator",
   description: "Discover your dream job with powerful search aggregation. Scrape jobs from LinkedIn, Indeed, Glassdoor and more.",
   keywords: ["job search", "job scraper", "LinkedIn jobs", "Indeed jobs", "career", "employment"],
-  authors: [{ name: "FindMyJob" }],
+  authors: [{ name: "Jobify" }],
   icons: {
     icon: "/favicon.ico",
   },

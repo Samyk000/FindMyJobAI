@@ -8,7 +8,7 @@ interface SkeletonJobRowProps {
 
 export default function SkeletonJobRow({ isDark }: SkeletonJobRowProps) {
   const shimmerStyle = {
-    background: isDark 
+    backgroundImage: isDark 
       ? 'linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%)'
       : 'linear-gradient(90deg, #e4e4e7 25%, #f4f4f5 50%, #e4e4e7 75%)',
     backgroundSize: '200% 100%',

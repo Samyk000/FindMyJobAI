@@ -85,49 +85,57 @@ const formatDate = (dateStr: string): string => {
   }
 };
 
-// Format description - convert markdown-like syntax to HTML
+// Format description - convert markdown-like syntax to HTML (XSS-safe)
 const formatDescription = (text: string): string => {
   if (!text) return "";
   
-  // Escape HTML entities first
-  let html = text
+  // Step 1: Escape ALL HTML entities first (prevents injection)
+  let safe = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
   
-  // Convert markdown headers (### Header -> <h3>Header</h3>)
-  html = html.replace(/^### (.+)$/gm, '<h3 class="text-base font-bold mt-4 mb-2">$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold mt-4 mb-2">$1</h1>');
+  // Step 2: Convert markdown to safe HTML (no attributes, no nested injection)
+  // Headers
+  safe = safe.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  safe = safe.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  safe = safe.replace(/^# (.+)$/gm, '<h1>$1</h1>');
   
-  // Convert bold (**text** or __text__)
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>');
-  html = html.replace(/__(.+?)__/g, '<strong class="font-semibold">$1</strong>');
+  // Bold
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  safe = safe.replace(/__(.+?)__/g, '<strong>$1</strong>');
   
-  // Convert italic (*text* or _text_)
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Italic
+  safe = safe.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  safe = safe.replace(/_(.+?)_/g, '<em>$1</em>');
   
-  // Convert bullet points (- item or * item)
-  html = html.replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
+  // Bullet points - collect consecutive items into <ul>
+  safe = safe.replace(/^[-*] (.+)$/gm, '<li>$1</li>');
+  safe = safe.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul class="ml-4 list-disc">${match}</ul>`);
   
-  // Convert numbered lists (1. item)
-  html = html.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>');
+  // Numbered lists - collect consecutive items into <ol>
+  safe = safe.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Only wrap consecutive <li> not already in a <ul>
+  safe = safe.replace(/(?<!<\/ul>)(<li>.*<\/li>\n?)+/g, (match) => {
+    if (match.includes('<ul')) return match; // Already wrapped
+    return `<ol class="ml-4 list-decimal">${match}</ol>`;
+  });
   
-  // Convert line breaks to paragraphs (double newline)
-  html = html.replace(/\n\n/g, '</p><p class="mb-3">');
-  
-  // Convert single line breaks
-  html = html.replace(/\n/g, '<br/>');
+  // Line breaks
+  safe = safe.replace(/\n\n/g, '</p><p>');
+  safe = safe.replace(/\n/g, '<br/>');
   
   // Wrap in paragraph
-  html = `<p class="mb-3">${html}</p>`;
+  safe = `<p>${safe}</p>`;
   
-  // Clean up empty paragraphs
-  html = html.replace(/<p class="mb-3">\s*<\/p>/g, '');
-  html = html.replace(/<p class="mb-3"><br\/><\/p>/g, '');
+  // Clean up empty paragraphs and br
+  safe = safe.replace(/<p>\s*<\/p>/g, '');
+  safe = safe.replace(/<p><br\/><\/p>/g, '');
+  safe = safe.replace(/<p>\s*<br\/>/g, '<p>');
   
-  return html;
+  return safe;
 };
 
 // --- COMPONENT ---

@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
+from utils.helpers import format_search_location, matches_target_country, matches_query_location
+
 # JobSpy import compatibility
 try:
     from jobspy import scrape_jobs
@@ -80,12 +82,13 @@ def scrape_only(
 
     for t_i, title in enumerate(titles, start=1):
         for l_i, loc in enumerate(locations, start=1):
-            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{loc}'")
+            search_loc = format_search_location(loc, country)
+            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}')")
             try:
                 df = scrape_jobs(
                     site_name=sites,
                     search_term=title,
-                    location=loc,
+                    location=search_loc,
                     results_wanted=results_per_site,
                     hours_old=hours_old,
                     linkedin_fetch_description=True,
@@ -106,6 +109,33 @@ def scrape_only(
                 job_url = str(r.get("job_url") or "").strip()
                 title_r = str(r.get("title") or "").strip()
                 if not job_url or not title_r:
+                    filtered_out += 1
+                    continue
+
+                # Strict dynamic title filtering (case-insensitive substring check)
+                title_lower = title_r.lower()
+                matches_title = False
+                for t in titles:
+                    t_clean = t.lower().strip()
+                    if t_clean and t_clean in title_lower:
+                        matches_title = True
+                        break
+                
+                if not matches_title:
+                    filtered_out += 1
+                    continue
+
+                # Country validation
+                if not matches_target_country(str(r.get("location") or ""), country):
+                    filtered_out += 1
+                    continue
+
+                # Location validation
+                if not matches_query_location(
+                    str(r.get("location") or ""),
+                    bool(r.get("is_remote") or False),
+                    loc
+                ):
                     filtered_out += 1
                     continue
 
@@ -169,6 +199,7 @@ def scrape_jobs_incremental(
     log: LogFn,
     on_job_found: Callable[[Dict[str, Any]], bool],
     on_progress: Optional[Callable[[int, int, str], None]] = None,
+    is_cancelled: Optional[Callable[[], bool]] = None,
 ) -> Dict[str, int]:
     """
     Scrapes jobs and calls on_job_found callback for each discovered job.
@@ -214,8 +245,15 @@ def scrape_jobs_incremental(
     if c_code in ["us", "united states"]: c_code = "usa"
     if c_code in ["united kingdom"]: c_code = "uk"
 
+    cancelled = False
     for t_i, title in enumerate(titles, start=1):
+        if is_cancelled and is_cancelled():
+            cancelled = True
+            break
         for l_i, loc in enumerate(locations, start=1):
+            if is_cancelled and is_cancelled():
+                cancelled = True
+                break
             current_query += 1
             # Show all sites being scraped (JobSpy scrapes all sites simultaneously)
             current_site = ", ".join(sites) if sites else ""
@@ -224,12 +262,13 @@ def scrape_jobs_incremental(
             if on_progress:
                 on_progress(current_query, total_queries, current_site)
             
-            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{loc}' via {current_site}")
+            search_loc = format_search_location(loc, country)
+            log(f"Query {t_i}/{len(titles)} · {l_i}/{len(locations)} → '{title}' in '{search_loc}' (original: '{loc}') via {current_site}")
             try:
                 df = scrape_jobs(
                     site_name=sites,
                     search_term=title,
-                    location=loc,
+                    location=search_loc,
                     results_wanted=results_per_site,
                     hours_old=hours_old,
                     linkedin_fetch_description=True,
@@ -250,6 +289,33 @@ def scrape_jobs_incremental(
                 job_url = str(r.get("job_url") or "").strip()
                 title_r = str(r.get("title") or "").strip()
                 if not job_url or not title_r:
+                    filtered_out += 1
+                    continue
+
+                # Strict dynamic title filtering (case-insensitive substring check)
+                title_lower = title_r.lower()
+                matches_title = False
+                for t in titles:
+                    t_clean = t.lower().strip()
+                    if t_clean and t_clean in title_lower:
+                        matches_title = True
+                        break
+                
+                if not matches_title:
+                    filtered_out += 1
+                    continue
+
+                # Country validation
+                if not matches_target_country(str(r.get("location") or ""), country):
+                    filtered_out += 1
+                    continue
+
+                # Location validation
+                if not matches_query_location(
+                    str(r.get("location") or ""),
+                    bool(r.get("is_remote") or False),
+                    loc
+                ):
                     filtered_out += 1
                     continue
 
@@ -292,6 +358,8 @@ def scrape_jobs_incremental(
                 is_new = on_job_found(job)
                 if is_new:
                     kept_total += 1
+        if cancelled:
+            break
 
     stats = {
         "raw_total": raw_total,

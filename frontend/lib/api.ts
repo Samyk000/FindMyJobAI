@@ -162,16 +162,18 @@ export const apiClient = {
     source_site?: string;
     location?: string;
   } = {}): Promise<{ jobs: JobRow[]; total: number; limit: number; offset: number }> {
-    const searchParams = new URLSearchParams();
-    if (params.status) searchParams.set('status', params.status);
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.offset) searchParams.set('offset', params.offset.toString());
-    if (params.batch_id) searchParams.set('batch_id', params.batch_id);
-    if (params.source_site) searchParams.set('source_site', params.source_site);
-    if (params.location) searchParams.set('location', params.location);
-
-    const url = `${API_BASE_URL}/jobs/search?${searchParams.toString()}`;
-    return fetchWithTimeout(url);
+    const url = `${API_BASE_URL}/jobs/search`;
+    return fetchWithTimeout(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        status: params.status,
+        limit: params.limit,
+        offset: params.offset,
+        batch_id: params.batch_id,
+        source_site: params.source_site,
+        location: params.location,
+      }),
+    });
   },
 
   /**
@@ -208,9 +210,10 @@ export const apiClient = {
   /**
    * Clear all jobs
    */
-  async clearAllJobs(): Promise<{ ok: boolean; message: string; count: number }> {
-    const result = await fetchWithTimeout<{ ok: boolean; message: string; count: number }>(`${API_BASE_URL}/jobs/clear`, {
-      method: 'POST',
+  async clearAllJobs(resetSettings: boolean = false): Promise<{ ok: boolean; message: string; count: number }> {
+    const url = `${API_BASE_URL}/jobs/clear-all?reset_settings=${resetSettings}`;
+    const result = await fetchWithTimeout<{ ok: boolean; message: string; count: number }>(url, {
+      method: 'DELETE',
     });
     // Clear all cache after clearing jobs
     clearApiCache();
@@ -236,6 +239,15 @@ export const apiClient = {
       },
       SEARCH_TIMEOUT
     );
+  },
+
+  /**
+   * Cancel a scrape job
+   */
+  async cancelScrape(jobId: string): Promise<{ ok: boolean; message: string }> {
+    return fetchWithTimeout(`${API_BASE_URL}/run/cancel/${jobId}`, {
+      method: 'POST',
+    });
   },
 
   /**

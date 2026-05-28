@@ -11,11 +11,12 @@ from database import get_db
 from config import SUPPORTED_COUNTRIES, SUPPORTED_SITES
 from schemas import SettingsIn
 from services.job_service import SettingsService
-from utils.helpers import sanitize_csv_input, sanitize_input
+from utils.helpers import sanitize_query_input, sanitize_input
 
 logger = logging.getLogger("job-agent")
 
 router = APIRouter(prefix="", tags=["settings"])
+
 
 
 @router.get("/health")
@@ -102,15 +103,16 @@ def save_settings(payload: SettingsIn, db: Session = Depends(get_db)):
         Success message
     """
     try:
-        # Sanitize all text inputs
-        sanitized_titles = sanitize_csv_input(payload.titles) if payload.titles else ""
-        sanitized_locations = sanitize_csv_input(payload.locations) if payload.locations else ""
-        sanitized_country = sanitize_input(payload.country, max_length=100) if payload.country else "india"
-        sanitized_include_kw = sanitize_csv_input(payload.include_keywords) if payload.include_keywords else ""
-        sanitized_exclude_kw = sanitize_csv_input(payload.exclude_keywords) if payload.exclude_keywords else ""
+        # Sanitize all text inputs without HTML-escaping to prevent queries like &amp;
+        sanitized_titles = sanitize_query_input(payload.titles) if payload.titles else ""
+        sanitized_locations = sanitize_query_input(payload.locations) if payload.locations else ""
+        sanitized_country = sanitize_query_input(payload.country, max_length=100) if payload.country else "india"
+        sanitized_include_kw = sanitize_query_input(payload.include_keywords) if payload.include_keywords else ""
+        sanitized_exclude_kw = sanitize_query_input(payload.exclude_keywords) if payload.exclude_keywords else ""
         
         # Sanitize site names (they come as a list)
-        sanitized_sites = ",".join(sanitize_input(s, max_length=50) for s in payload.sites if s)
+        sanitized_sites = ",".join(sanitize_query_input(s, max_length=50) for s in payload.sites if s)
+
         
         SettingsService.update_settings(
             db,

@@ -2,7 +2,7 @@
 Database configuration for PyInstaller compatibility.
 
 In development mode, the database is stored in the backend directory.
-In production (frozen) mode, the database is stored in %LOCALAPPDATA%\\FindMyJobAI.
+In production (frozen) mode, the database is stored in %LOCALAPPDATA%\\Jobify.
 """
 
 import os
@@ -24,7 +24,7 @@ def get_database_path() -> str:
     Get the appropriate database path based on execution mode.
     
     In development mode: backend/jobs.db (relative to this file)
-    In frozen mode: %LOCALAPPDATA%\\FindMyJobAI\\jobs.db
+    In frozen mode: %LOCALAPPDATA%\\Jobify\\jobs.db
     
     Returns:
         Absolute path to the database file
@@ -36,7 +36,7 @@ def get_database_path() -> str:
             # Fallback to user home if AppData not available
             appdata = os.path.expanduser('~')
         
-        db_dir = os.path.join(appdata, 'FindMyJobAI')
+        db_dir = os.path.join(appdata, 'Jobify')
         os.makedirs(db_dir, exist_ok=True)
         return os.path.join(db_dir, 'jobs.db')
     else:

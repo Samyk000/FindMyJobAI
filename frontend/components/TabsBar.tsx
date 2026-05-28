@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, X, Search, Settings } from "lucide-react";
+import { Plus, X, Search, Settings, Briefcase } from "lucide-react";
 import { SearchTab } from '@/types';
 
 interface TabsBarProps {
@@ -141,11 +141,11 @@ export function MobileHeader({
         <Search className="w-5 h-5" />
       </button>
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600">
-          <Search className="w-4 h-4 text-white" />
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm">
+          <Briefcase className="w-4 h-4 text-white" />
         </div>
         <span className={`font-bold tracking-tight font-display ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          FindMyJob<span className="text-teal-500">AI</span>
+          Job<span className="text-teal-500">ify</span>
         </span>
       </div>
       <button

@@ -20,6 +20,7 @@ interface FilterBarProps {
   displayJobsCount: number;
   isFetching: boolean;
   onFetch: () => void;
+  onCancel?: () => void;
 }
 
 // Custom hook for dropdown keyboard navigation
@@ -155,7 +156,8 @@ export default function FilterBar({
   uniqueLocations,
   displayJobsCount,
   isFetching,
-  onFetch
+  onFetch,
+  onCancel
 }: FilterBarProps) {
   // Refs for focus management
   const portalTriggerRef = useRef<HTMLButtonElement>(null);
@@ -613,16 +615,24 @@ export default function FilterBar({
           </span>
         </div>
         
-        {/* Fetch Button */}
-        <button 
-          onClick={onFetch} 
-          disabled={isFetching}
-          aria-busy={isFetching}
-          aria-label={isFetching ? 'Fetching jobs...' : 'Fetch jobs'}
-          className={`btn-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${isDark ? 'bg-white text-black' : 'bg-teal-600 text-white'}`}>
-          {isFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
-          Fetch Jobs
-        </button>
+        {/* Fetch/Cancel Button */}
+        {isFetching ? (
+          <button 
+            onClick={onCancel} 
+            aria-label="Cancel fetching jobs"
+            className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 bg-red-600 hover:bg-red-700 text-white transition-colors duration-200">
+            <X className="w-3.5 h-3.5" />
+            Cancel Fetch
+          </button>
+        ) : (
+          <button 
+            onClick={onFetch} 
+            aria-label="Fetch jobs"
+            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 transition-colors duration-200 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-teal-600 text-white hover:bg-teal-700'}`}>
+            <Search className="w-3 h-3" />
+            Fetch Jobs
+          </button>
+        )}
       </div>
     </div>
   );

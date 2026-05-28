@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import { JobRow, SettingsModel, SearchTab, PipelineStatus, ThemeMode } from "@/types";
 
 // Constants
-import { DEFAULT_TABS, REQUEST_TIMEOUT, CACHE_TTL } from "@/lib/constants";
+import { DEFAULT_TABS } from "@/lib/constants";
 import { CONFIG } from "@/lib/config";
 
 // Utils
@@ -15,9 +15,9 @@ import {
   loadThemeFromStorage, 
   saveThemeToStorage, 
   loadTabsFromStorage, 
-  saveTabsToStorage,
-  fetchWithError
+  saveTabsToStorage
 } from "@/lib/utils";
+import apiClient from "@/lib/api";
 
 // Components - Dynamic imports for code splitting
 const MobileNav = dynamic(() => import("../components/MobileNav"), { ssr: false });
@@ -57,8 +57,8 @@ export default function Page() {
   const [inputLocation, setInputLocation] = useState("");
   const [inputCountry, setInputCountry] = useState("india");
   const [inputSites, setInputSites] = useState<string[]>([]);
-  const [inputLimit, setInputLimit] = useState(20);
-  const [inputHours, setInputHours] = useState(72);
+  const [inputLimit, setInputLimit] = useState<number | "">(20);
+  const [inputHours, setInputHours] = useState<number | "">(72);
   const [inputKeywordsInc, setInputKeywordsInc] = useState("");
   const [inputKeywordsExc, setInputKeywordsExc] = useState("");
 
@@ -95,9 +95,6 @@ export default function Page() {
 
   // Mobile state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Request cache ref
-  const requestCacheRef = useRef<Map<string, { data: unknown; timestamp: number }>>(new Map());
 
   // Debounce tracking for rapid clicks
   const debounceRef = useRef<Record<string, number>>({});
@@ -154,21 +151,18 @@ export default function Page() {
     }
   }, [activeTabId, tabs]);
 
-  // Fetch wrapper with caching
-  const fetchWithErrorCallback = useCallback(async (url: string, options?: RequestInit) => {
-    return fetchWithError(url, options, requestCacheRef.current, CACHE_TTL, REQUEST_TIMEOUT);
-  }, []);
+
 
   const fetchSettings = useCallback(async () => {
     try {
-      const data = await fetchWithErrorCallback(`${BACKEND}/settings`) as SettingsModel;
+      const data = await apiClient.getSettings();
       setSettings(data);
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
       return null;
     }
-  }, [BACKEND, fetchWithErrorCallback]);
+  }, []);
 
   const fetchJobs = useCallback(async (options?: { 
     batchId?: string; 
@@ -177,15 +171,11 @@ export default function Page() {
   }) => {
     const { batchId, merge = false, showNotification = false } = options || {};
     try {
-      const data = await fetchWithErrorCallback(`${BACKEND}/jobs/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: viewStatus === 'new' ? 'active' : viewStatus,
-          limit: 500,
-          batch_id: batchId || undefined
-        }),
-      }) as { jobs: JobRow[] };
+      const data = await apiClient.getJobs({
+        status: viewStatus === 'new' ? 'active' : viewStatus,
+        limit: 500,
+        batch_id: batchId || undefined
+      });
       
       const fetchedJobs = data.jobs || [];
       
@@ -228,7 +218,7 @@ export default function Page() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
     }
-  }, [BACKEND, fetchWithErrorCallback, viewStatus]);
+  }, [viewStatus]);
 
   useEffect(() => {
     async function bootstrap() {
@@ -356,7 +346,7 @@ export default function Page() {
     if (!pipelineJobId) return;
     const tick = setInterval(async () => {
       try {
-        const data = await fetchWithErrorCallback(`${BACKEND}/logs/${pipelineJobId}`) as PipelineStatus;
+        const data = await apiClient.getPipelineLogs(pipelineJobId);
         setPipeline(data);
         if (data.state === "running" && data.stats?.batch_id) {
           setCurrentBatchId(data.stats.batch_id as string);
@@ -364,25 +354,25 @@ export default function Page() {
           // This ensures other tabs show their jobs while fetching
           await fetchJobs({ merge: true });
         }
-        if (data.state === "done" || data.state === "failed") {
+        if (data.state === "done" || data.state === "failed" || data.state === "cancelled") {
           setPipelineJobId("");
           setCurrentBatchId(null);
           setFetchingTabId(null);  // Clear fetching tab when done
-          if (data.state === "done" && data.stats?.batch_id) {
+          if ((data.state === "done" || data.state === "cancelled") && data.stats?.batch_id) {
             handleSearchComplete(data.stats.batch_id as string);
           }
           if (data.state === "failed") setError("Job search failed. Check console.");
-          // Final fetch to get all jobs including the just-completed batch
-          // Show notification for any new jobs found
-          await fetchJobs({ merge: true, showNotification: true });
+          // Final fetch to get all jobs including the just-completed/cancelled batch
+          // Show notification for any new jobs found (only on done)
+          await fetchJobs({ merge: true, showNotification: data.state === "done" });
         }
       } catch (err) {
         // Log polling errors for debugging - don't show to user to avoid noise
         console.error('Polling error:', err);
       }
-    }, 1000);
+    }, 500);
     return () => clearInterval(tick);
-  }, [pipelineJobId, BACKEND, fetchWithErrorCallback, fetchJobs, handleSearchComplete]);
+  }, [pipelineJobId, fetchJobs, handleSearchComplete]);
 
   // -- ACTIONS --
 
@@ -395,7 +385,7 @@ export default function Page() {
     setShowClearConfirmModal(false);
     setShowSettingsModal(false);
     try {
-      await fetchWithErrorCallback(`${BACKEND}/jobs/clear-all?reset_settings=true`, { method: "DELETE" });
+      await apiClient.clearAllJobs(true);
       localStorage.removeItem('job-bot-tabs');
       localStorage.removeItem('job-bot-active-tab');
       setTabs(DEFAULT_TABS);
@@ -472,16 +462,18 @@ export default function Page() {
       }));
     }
 
+    const finalLimit = inputLimit === "" ? 20 : Math.max(5, Math.min(100, inputLimit));
+    const finalHours = inputHours === "" ? 72 : Math.max(1, Math.min(720, inputHours));
+
+    setInputLimit(finalLimit);
+    setInputHours(finalHours);
+
     setActionLoading('scrape');
     try {
-      await fetchWithErrorCallback(`${BACKEND}/settings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          titles: inputTitle, locations: inputLocation, country: inputCountry,
-          sites: inputSites, results_per_site: inputLimit, hours_old: inputHours,
-          include_keywords: inputKeywordsInc, exclude_keywords: inputKeywordsExc
-        }),
+      await apiClient.updateSettings({
+        titles: inputTitle, locations: inputLocation, country: inputCountry,
+        sites: inputSites, results_per_site: finalLimit, hours_old: finalHours,
+        include_keywords: inputKeywordsInc, exclude_keywords: inputKeywordsExc
       });
       setPipeline({ 
         state: "running", 
@@ -497,17 +489,31 @@ export default function Page() {
           started_at: Date.now()
         } 
       });
-      const data = await fetchWithErrorCallback(`${BACKEND}/run/scrape`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titles: inputTitle, locations: inputLocation, country: inputCountry, hours_old: inputHours }),
-      }) as { job_id: string };
+      const data = await apiClient.startScrape({
+        titles: inputTitle,
+        locations: inputLocation,
+        country: inputCountry,
+        hours_old: finalHours
+      });
       setPipelineJobId(data.job_id);
     } catch (err) {
       setPipeline({ state: "failed", logs: ["Failed."], stats: {} });
       setFetchingTabId(null);  // Clear on error
       setError(err instanceof Error ? err.message : 'Error starting search');
     } finally { setActionLoading(null); }
+  }
+
+  async function cancelScrape() {
+    if (!pipelineJobId) return;
+    setActionLoading('cancel');
+    try {
+      await apiClient.cancelScrape(pipelineJobId);
+      setPipeline(prev => prev ? { ...prev, state: "cancelled", logs: [...prev.logs, "Cancellation requested by user."] } : null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cancelling search');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   async function updateStatus(id: string, st: "new" | "saved" | "rejected") {
@@ -521,11 +527,7 @@ export default function Page() {
     const previousJobs = jobs;
     setJobs(jobs.map(j => j.id === id ? { ...j, status: st } : j));
     try {
-      await fetchWithErrorCallback(`${BACKEND}/jobs/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: st }),
-      });
+      await apiClient.updateJobStatus(id, st);
     } catch (err) {
       setJobs(previousJobs);  // Restore from snapshot
       setError(err instanceof Error ? err.message : 'Update failed');
@@ -542,20 +544,20 @@ export default function Page() {
     if (!confirm("Delete this job?")) return;
     const old = jobs;
     setJobs(jobs.filter(j => j.id !== id));
-    try { await fetchWithErrorCallback(`${BACKEND}/jobs/${id}`, { method: "DELETE" }); }
+    try { await apiClient.deleteJob(id); }
     catch (err) { setJobs(old); setError(err instanceof Error ? err.message : 'Delete failed'); }
   }
 
   // Handle job click to open detail modal
   const handleJobClick = useCallback(async (jobId: string) => {
     try {
-      const job = await fetchWithErrorCallback(`${BACKEND}/jobs/${jobId}`) as JobRow;
+      const job = await apiClient.getJob(jobId);
       setSelectedJob(job);
       setIsDetailModalOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load job details');
     }
-  }, [BACKEND, fetchWithErrorCallback]);
+  }, []);
 
   // -- FILTER LOGIC --
 
@@ -566,6 +568,16 @@ export default function Page() {
         return jobs.filter(j => j.batch_id === currentBatchId);
       }
       return [];
+    }
+
+    // During scraping on "all" tab, show all new jobs (including just-fetched ones)
+    if (activeTabId === 'all' && pipeline?.state === 'running') {
+      return jobs.filter(j => {
+        if (viewStatus === 'new' && j.status !== 'new') return false;
+        if (viewStatus === 'saved' && j.status !== 'saved') return false;
+        if (viewStatus === 'rejected' && j.status !== 'rejected') return false;
+        return true;
+      });
     }
 
     // Get the current tab to check for batch IDs
@@ -675,6 +687,7 @@ export default function Page() {
         inputKeywordsExc={inputKeywordsExc}
         setInputKeywordsExc={setInputKeywordsExc}
         onFetch={runScrape}
+        onCancel={cancelScrape}
         isFetching={pipeline?.state === 'running' || actionLoading === 'scrape'}
         showMoreOptions={showMoreOptions}
         setShowMoreOptions={setShowMoreOptions}
@@ -757,6 +770,7 @@ export default function Page() {
           displayJobsCount={displayJobs.length}
           isFetching={pipeline?.state === 'running' || actionLoading === 'scrape'}
           onFetch={runScrape}
+          onCancel={cancelScrape}
         />
 
         {/* LIST AREA */}

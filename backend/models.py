@@ -18,7 +18,7 @@ class JobDB(Base):
     title = Column(String, default="")
     company = Column(String, default="")
     location = Column(String, default="")
-    job_url = Column(String, default="", index=True)  # Index for duplicate checking
+    job_url = Column(String, default="", index=True, unique=True)  # Unique for duplicate detection
     description = Column(Text, default="")
     is_remote = Column(Boolean, default=False)
     date_posted = Column(String, default="")

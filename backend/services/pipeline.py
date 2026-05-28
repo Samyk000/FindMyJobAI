@@ -3,6 +3,7 @@ Pipeline service for the Job Bot API.
 Manages thread-safe pipeline state for background job processing.
 """
 import uuid
+import copy
 import threading
 import logging
 from datetime import datetime, timezone
@@ -47,6 +48,33 @@ class PipelineManager:
             }
         return job_id
     
+    def create_if_none(self, kind: str) -> Optional[str]:
+        """
+        Atomically create a new pipeline only if no running pipelines exist.
+        Returns the new pipeline ID, or None if a pipeline is already running.
+        
+        Args:
+            kind: Type of pipeline (e.g., "scrape")
+            
+        Returns:
+            Unique pipeline ID if created, None if already running
+        """
+        job_id = str(uuid.uuid4())
+        with self._lock:
+            self._cleanup_expired()
+            # Check if any pipeline is running
+            running = [p for p in self._pipelines.values() if p.get("state") == "running"]
+            if running:
+                return None
+            self._pipelines[job_id] = {
+                "kind": kind,
+                "state": "running",
+                "logs": [],
+                "stats": {},
+                "started_at": datetime.now(timezone.utc).isoformat(),
+            }
+        return job_id
+    
     def log(self, job_id: str, msg: str) -> None:
         """
         Add a log message to a pipeline.
@@ -78,18 +106,31 @@ class PipelineManager:
                 if stats:
                     self._pipelines[job_id]["stats"].update(stats)
     
+    def cancel(self, job_id: str) -> None:
+        """
+        Cancel a running pipeline.
+        
+        Args:
+            job_id: Pipeline ID to cancel
+        """
+        with self._lock:
+            if job_id in self._pipelines and self._pipelines[job_id]["state"] == "running":
+                self._pipelines[job_id]["state"] = "cancelled"
+                self._pipelines[job_id]["logs"].append("Cancellation requested by user.")
+    
     def get(self, job_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get pipeline status by ID.
+        Get pipeline status by ID. Returns a deep copy to prevent mutation.
         
         Args:
             job_id: Pipeline ID
             
         Returns:
-            Pipeline dictionary or None if not found
+            Pipeline dictionary copy or None if not found
         """
         with self._lock:
-            return self._pipelines.get(job_id)
+            pipeline = self._pipelines.get(job_id)
+            return copy.deepcopy(pipeline) if pipeline else None
     
     def get_all_running(self) -> list:
         """

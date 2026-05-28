@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search } from "lucide-react";
+import { Briefcase } from "lucide-react";
 
 interface LoadingScreenProps {
   isDark: boolean;
@@ -14,14 +14,14 @@ export default function LoadingScreen({ isDark }: LoadingScreenProps) {
       <div className="relative">
         <div className={`absolute inset-0 rounded-2xl blur-xl ${isDark ? 'bg-teal-500/20' : 'bg-teal-500/10'}`}></div>
         <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/20' : 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/30'}`}>
-          <Search className="w-7 h-7 text-white animate-pulse" />
+          <Briefcase className="w-7 h-7 text-white animate-pulse" />
         </div>
       </div>
       
       {/* Brand Name */}
       <div className="flex flex-col items-center gap-1">
         <h1 className={`text-2xl font-bold tracking-tight font-display ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          FindMyJob<span className="text-teal-500">AI</span>
+          Job<span className="text-teal-500">ify</span>
         </h1>
         <p className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>AI-Powered Job Search</p>
       </div>

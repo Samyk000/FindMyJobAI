@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "FindMyJobAI",
+  "productName": "Jobify",
   "version": "1.0.0",
-  "identifier": "com.findmyjobai.app",
+  "identifier": "com.jobify.app",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "FindMyJobAI - Job Search Assistant",
+        "title": "Jobify - Job Search Assistant",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

@@ -29,17 +29,17 @@ type MobileNavProps = {
   setInputCountry: (v: string) => void;
   inputSites: string[];
   setInputSites: (v: string[]) => void;
-  inputLimit: number;
-  setInputLimit: (v: number) => void;
-  inputHours: number;
-  setInputHours: (v: number) => void;
+  inputLimit: number | "";
+  setInputLimit: (v: number | "") => void;
+  inputHours: number | "";
+  setInputHours: (v: number | "") => void;
   inputKeywordsInc: string;
   setInputKeywordsInc: (v: string) => void;
   inputKeywordsExc: string;
   setInputKeywordsExc: (v: string) => void;
   // Actions
   onFetch: () => void;
-  // State
+  onCancel?: () => void;
   isFetching: boolean;
   showMoreOptions: boolean;
   setShowMoreOptions: (v: boolean) => void;
@@ -69,6 +69,7 @@ export default function MobileNav({
   inputKeywordsExc,
   setInputKeywordsExc,
   onFetch,
+  onCancel,
   isFetching,
   showMoreOptions,
   setShowMoreOptions,
@@ -143,15 +144,15 @@ export default function MobileNav({
           }`}
         >
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600">
-              <Search className="w-3.5 h-3.5 text-white" />
+            <div className="w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm">
+              <Briefcase className="w-3.5 h-3.5 text-white" />
             </div>
             <span
               className={`font-bold text-sm tracking-tight font-display ${
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
-              FindMyJob<span className="text-teal-500">AI</span>
+              Job<span className="text-teal-500">ify</span>
             </span>
           </div>
           <button
@@ -264,27 +265,33 @@ export default function MobileNav({
           {/* Divider */}
           <div className={`h-px ${isDark ? "bg-zinc-800" : "bg-gray-200"}`} />
 
-          {/* Platforms - Single line icons only, bigger buttons */}
           <div className="space-y-1">
-            <label
-              className={`text-[9px] font-bold uppercase tracking-wider ${
-                isDark ? "text-zinc-500" : "text-gray-500"
-              }`}
-            >
-              Platforms
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                className={`text-[9px] font-bold uppercase tracking-wider ${
+                  isDark ? "text-zinc-500" : "text-gray-500"
+                }`}
+              >
+                Platforms
+              </label>
+            </div>
             <div className="flex items-center gap-2">
-              {JOB_PLATFORMS.map(
-                (site) => (
+              {JOB_PLATFORMS.map((site) => (
+                <div key={site} className="relative flex flex-col justify-end flex-1">
+                  {site === "glassdoor" && inputSites.includes("glassdoor") && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-semibold text-red-500 dark:text-red-400 text-center select-none whitespace-nowrap leading-none">
+                      Not working currently
+                    </span>
+                  )}
+                  <div className="h-3.5" />
                   <button
-                    key={site}
                     onClick={() => {
                       const newSites = inputSites.includes(site)
                         ? inputSites.filter((s) => s !== site)
                         : [...inputSites, site];
                       setInputSites(newSites);
                     }}
-                    className={`flex-1 py-2.5 rounded-md border transition-colors ${
+                    className={`w-full py-2.5 rounded-md border transition-colors ${
                       inputSites.includes(site)
                         ? "bg-teal-500/20 border-teal-500 text-teal-400"
                         : isDark
@@ -297,8 +304,8 @@ export default function MobileNav({
                     {site === "indeed" && <Briefcase className="w-5 h-5 mx-auto" />}
                     {site === "glassdoor" && <Globe className="w-5 h-5 mx-auto" />}
                   </button>
-                )
-              )}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -329,11 +336,21 @@ export default function MobileNav({
                 value={inputLimit}
                 min={5}
                 max={100}
-                onChange={(e) =>
-                  setInputLimit(
-                    Math.max(5, Math.min(100, parseInt(e.target.value) || 20))
-                  )
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setInputLimit('');
+                  } else {
+                    setInputLimit(parseInt(val) || 0);
+                  }
+                }}
+                onBlur={() => {
+                  if (inputLimit === '' || inputLimit < 5) {
+                    setInputLimit(5);
+                  } else if (inputLimit > 100) {
+                    setInputLimit(100);
+                  }
+                }}
               />
             </div>
             <div
@@ -358,11 +375,21 @@ export default function MobileNav({
                 value={inputHours}
                 min={1}
                 max={720}
-                onChange={(e) =>
-                  setInputHours(
-                    Math.max(1, Math.min(720, parseInt(e.target.value) || 72))
-                  )
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setInputHours('');
+                  } else {
+                    setInputHours(parseInt(val) || 0);
+                  }
+                }}
+                onBlur={() => {
+                  if (inputHours === '' || inputHours < 1) {
+                    setInputHours(1);
+                  } else if (inputHours > 720) {
+                    setInputHours(720);
+                  }
+                }}
               />
             </div>
           </div>
@@ -442,26 +469,34 @@ export default function MobileNav({
             </span>
           </div>
           
-          {/* Fetch Button */}
-          <button
-            onClick={() => {
-              onFetch();
-              onClose();
-            }}
-            disabled={isFetching}
-            className={`btn-primary w-full py-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-2 shadow-lg ${
-              isDark
-                ? "bg-white text-black"
-                : "bg-teal-600 text-white"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {isFetching ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
+          {/* Fetch/Cancel Button */}
+          {isFetching ? (
+            <button
+              onClick={() => {
+                onCancel?.();
+                onClose();
+              }}
+              className="w-full py-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-2 shadow-lg bg-red-600 hover:bg-red-700 text-white transition-colors duration-200"
+            >
+              <X className="w-3.5 h-3.5" />
+              Cancel Fetch
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onFetch();
+                onClose();
+              }}
+              className={`w-full py-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition-colors duration-200 ${
+                isDark
+                  ? "bg-white text-black hover:bg-zinc-200"
+                  : "bg-teal-600 text-white hover:bg-teal-700"
+              }`}
+            >
               <Search className="w-3.5 h-3.5" />
-            )}
-            Fetch Jobs
-          </button>
+              Fetch Jobs
+            </button>
+          )}
         </div>
       </div>
     </>

@@ -22,7 +22,10 @@ from database import init_db
 from routes import jobs_router, search_router, settings_router
 
 # Import custom exceptions
-from utils.exceptions import JobBotError, ValidationError, NotFoundError
+from utils.exceptions import JobBotError, ValidationError, NotFoundError, RateLimitError
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from middleware.rate_limit import limiter
 
 # --- APP SETUP ---
 app = FastAPI(
@@ -30,20 +33,35 @@ app = FastAPI(
     description="Job search and aggregation API",
     version="1.0.0"
 )
+app.state.limiter = limiter
 
 # Configure CORS
 from config import CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SlowAPIMiddleware)
 
 
 # --- GLOBAL EXCEPTION HANDLERS ---
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """Handle rate limit exceeded exceptions."""
+    logger.warning(f"RateLimitExceeded: {exc.detail}")
+    err = RateLimitError(message="Too many requests. Please wait before trying again.", retry_after=None)
+    return JSONResponse(
+        status_code=429,
+        content=err.to_dict()
+    )
+
+
 @app.exception_handler(JobBotError)
 async def jobbot_error_handler(request: Request, exc: JobBotError):
+
     """Handle all custom Job Bot errors."""
     logger.error(f"JobBotError: {exc.message} - {exc.detail}")
     return JSONResponse(

@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Builds the FindMyJobAI backend into a standalone .exe and
+    Builds the Jobify backend into a standalone .exe and
     copies it to the Tauri sidecar binaries directory.
 .DESCRIPTION
     Run this script before `npx tauri build` to ensure the
     backend .exe is fresh and correctly named.
 #>
 
-Write-Host "=== Building FindMyJobAI Backend ===" -ForegroundColor Cyan
+Write-Host "=== Building Jobify Backend ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Navigate to backend
@@ -15,7 +15,7 @@ Set-Location backend
 
 # Run PyInstaller
 Write-Host "Running PyInstaller..." -ForegroundColor Yellow
-pyinstaller findmyjobai.spec --clean --noconfirm
+pyinstaller jobify.spec --clean --noconfirm
 
 if (-not $?) {
     Write-Host "ERROR: PyInstaller build failed!" -ForegroundColor Red

@@ -11,7 +11,21 @@ from config import DB_URL
 logger = logging.getLogger("job-agent")
 
 # Create database engine
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+engine = create_engine(
+    DB_URL, 
+    connect_args={"check_same_thread": False},
+    pool_pre_ping=True
+)
+
+# Enable WAL mode and busy timeout for concurrent reads during writes
+def _set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.close()
+
+from sqlalchemy import event
+event.listen(engine, "connect", _set_sqlite_pragma)
 
 # Create session factory
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

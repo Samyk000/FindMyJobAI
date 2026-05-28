@@ -283,7 +283,9 @@ class JobService:
         if source_site:
             q = q.filter(JobDB.source_site == source_site)
         if location:
-            q = q.filter(JobDB.location.ilike(f"%{location}%"))
+            # Escape LIKE wildcards to prevent injection
+            safe_location = location.replace('%', '\\%').replace('_', '\\_')
+            q = q.filter(JobDB.location.ilike(f"%{safe_location}%", escape='\\'))
         
         # Ordering and pagination
         q = q.order_by(JobDB.fetched_at.desc())
