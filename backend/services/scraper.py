@@ -82,7 +82,7 @@ class ScraperService:
                 Returns:
                     True if a NEW job was saved, False if skipped (duplicate) or failed
                 """
-                nonlocal count, duplicates, db
+                nonlocal count, duplicates, db, batch_count
                 try:
                     # Get and normalize the job URL
                     raw_url = job_data.get("job_url", "")
