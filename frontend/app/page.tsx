@@ -359,27 +359,24 @@ export default function Page() {
         setPipeline(data);
         if (data.state === "running" && data.stats?.batch_id) {
           setCurrentBatchId(data.stats.batch_id as string);
-          // Fetch ALL jobs in merge mode during polling (not just current batch)
-          // This ensures other tabs show their jobs while fetching
+          // Fetch jobs immediately on each tick for real-time updates
           await fetchJobs({ merge: true });
         }
         if (data.state === "done" || data.state === "failed" || data.state === "cancelled") {
           setPipelineJobId("");
           setCurrentBatchId(null);
-          setFetchingTabId(null);  // Clear fetching tab when done
+          setFetchingTabId(null);
           if ((data.state === "done" || data.state === "cancelled") && data.stats?.batch_id) {
             handleSearchComplete(data.stats.batch_id as string);
           }
           if (data.state === "failed") setError("Job search failed. Check console.");
-          // Final fetch to get all jobs including the just-completed/cancelled batch
-          // Show notification for any new jobs found (only on done)
+          // Final fetch with notification
           await fetchJobs({ merge: true, showNotification: data.state === "done" });
         }
       } catch (err) {
-        // Log polling errors for debugging - don't show to user to avoid noise
         console.error('Polling error:', err);
       }
-    }, 500);
+    }, 400); // Poll every 400ms for faster real-time updates
     return () => clearInterval(tick);
   }, [pipelineJobId, fetchJobs, handleSearchComplete]);
 
@@ -530,8 +527,19 @@ export default function Page() {
     setActionLoading('cancel');
     try {
       await apiClient.cancelScrape(pipelineJobId);
-      setPipeline(prev => prev ? { ...prev, state: "cancelled", logs: [...prev.logs, "Cancellation requested by user."] } : null);
+      // Clear pipeline state immediately - jobs remain visible
+      setPipelineJobId("");
+      setPipeline(null);
+      setCurrentBatchId(null);
+      setFetchingTabId(null);
+      setNotification("Search cancelled. Fetched jobs are kept.");
+      setTimeout(() => setNotification(null), 3000);
     } catch (err) {
+      // Even if API fails, clear the local state
+      setPipelineJobId("");
+      setPipeline(null);
+      setCurrentBatchId(null);
+      setFetchingTabId(null);
       setError(err instanceof Error ? err.message : 'Error cancelling search');
     } finally {
       setActionLoading(null);

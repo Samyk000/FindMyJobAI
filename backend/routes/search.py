@@ -154,16 +154,17 @@ def cancel_scrape(job_id: str):
                 resource_id=job_id
             )
             
-        if pipeline.get("state") != "running":
-            raise ValidationError(
-                f"Cannot cancel a pipeline in state: {pipeline.get('state')}",
-                field="state"
-            )
+        current_state = pipeline.get("state")
+        if current_state == "cancelled":
+            return {"ok": True, "message": "Scrape job already cancelled"}
+            
+        if current_state != "running":
+            return {"ok": True, "message": f"Scrape job in state '{current_state}', marking as cancelled"}
             
         pipeline_manager.cancel(job_id)
         logger.info(f"Cancellation requested for job {job_id}")
         return {"ok": True, "message": "Scrape job cancellation requested"}
-    except (ValidationError, NotFoundError):
+    except NotFoundError:
         raise
     except Exception as e:
         logger.error(f"Failed to cancel job {job_id}: {e}")
