@@ -796,7 +796,7 @@ export default function Page() {
         />
 
         {/* LIST AREA */}
-        <div id="main-content" className={`flex-1 overflow-y-auto p-0 scrollbar-thin ${isDark ? 'bg-black' : 'bg-white'}`} tabIndex={-1}>
+        <div id={`tab-panel-${activeTabId}`} role="tabpanel" aria-labelledby={`tab-${activeTabId}`} className={`flex-1 overflow-y-auto p-0 scrollbar-thin ${isDark ? 'bg-black' : 'bg-white'}`} tabIndex={-1}>
           <JobList
             isDark={isDark}
             displayJobs={displayJobs}

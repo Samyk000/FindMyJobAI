@@ -18,6 +18,7 @@ export function isJobRow(data: unknown): data is JobRow {
     typeof job.company === 'string' &&
     typeof job.location === 'string' &&
     typeof job.job_url === 'string' &&
+    typeof job.description === 'string' &&
     typeof job.is_remote === 'boolean' &&
     typeof job.date_posted === 'string' &&
     typeof job.source_site === 'string' &&

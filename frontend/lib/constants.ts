@@ -29,7 +29,3 @@ export const SUPPORTED_COUNTRIES = [
 // Job Platforms
 export const JOB_PLATFORMS = ['linkedin', 'indeed', 'glassdoor'] as const;
 export type JobPlatform = typeof JOB_PLATFORMS[number];
-
-// Request Configuration
-export const REQUEST_TIMEOUT = 30000; // 30 seconds
-export const CACHE_TTL = 5000; // 5 seconds cache TTL

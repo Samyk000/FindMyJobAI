@@ -183,14 +183,18 @@ class JobService:
         Args:
             db: Database session
             job_id: Job ID to update
-            status: New status value
+            status: New status value (must be "new", "saved", or "rejected")
             
         Returns:
             Updated JobDB instance
             
         Raises:
-            HTTPException: If job not found
+            HTTPException: If job not found or invalid status
         """
+        valid_statuses = ("new", "saved", "rejected")
+        if status not in valid_statuses:
+            raise HTTPException(400, f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+        
         job = db.query(JobDB).filter(JobDB.id == job_id).first()
         if not job:
             raise HTTPException(404, "Job not found")

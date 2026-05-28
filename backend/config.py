@@ -38,7 +38,7 @@ DB_URL = get_env_str("DB_URL", get_database_url())
 # --- CORS CONFIGURATION ---
 def get_cors_origins() -> List[str]:
     """Parse CORS origins from environment."""
-    origins = get_env_str("CORS_ORIGINS", "*")
+    origins = get_env_str("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
     if origins == "*":
         return ["*"]
     return [origin.strip() for origin in origins.split(",") if origin.strip()]
@@ -48,7 +48,7 @@ CORS_ORIGINS = get_cors_origins()
 
 
 # --- PIPELINE CONFIGURATION ---
-PIPELINE_EXPIRY_SECONDS = 3600  # 1 hour
+PIPELINE_EXPIRY_SECONDS = get_env_int("PIPELINE_EXPIRY_SECONDS", 3600)  # 1 hour
 
 
 # --- SUPPORTED VALUES ---

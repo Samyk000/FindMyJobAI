@@ -59,83 +59,6 @@ export function saveTabsToStorage(tabs: SearchTab[], activeTabId: string): void 
   }
 }
 
-// --- FETCH UTILITIES ---
-
-/**
- * @deprecated Use `apiClient` from '@/lib/api' instead.
- * This function is kept for backward compatibility during migration.
- * See the migration guide in plans3/phase3-code-quality-plan.md
- */
-export async function fetchWithError(
-  url: string, 
-  options: RequestInit | undefined,
-  requestCache: Map<string, { data: unknown; timestamp: number }>,
-  cacheTtl: number,
-  requestTimeout: number
-): Promise<unknown> {
-  // Check cache for GET requests
-  const isGetRequest = !options?.method || options.method === 'GET';
-  const cacheKey = isGetRequest ? url : null;
-  
-  if (cacheKey) {
-    const cached = requestCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < cacheTtl) {
-      return cached.data;
-    }
-  }
-
-  // Create AbortController for timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), requestTimeout);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      
-      // Handle specific HTTP status codes
-      if (response.status === 429) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      if (response.status === 503) {
-        throw new Error('Service temporarily unavailable. Please try again later.');
-      }
-      if (response.status >= 500) {
-        throw new Error('Server error. Please try again later.');
-      }
-      
-      throw new Error(data.detail || data.message || `Request failed with status ${response.status}`);
-    }
-    
-    const result = await response.json();
-    
-    // Cache successful GET requests
-    if (cacheKey) {
-      requestCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    }
-    
-    return result;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    
-    // Handle timeout
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('Request timed out. Please check your connection and try again.');
-    }
-    
-    // Handle network errors
-    if (err instanceof TypeError && err.message.includes('fetch')) {
-      throw new Error('Cannot connect to backend. Is the server running?');
-    }
-    throw err;
-  }
-}
-
 // --- DEBOUNCE HELPER ---
 
 export function withDebounce<T extends (...args: unknown[]) => unknown>(
@@ -143,14 +66,14 @@ export function withDebounce<T extends (...args: unknown[]) => unknown>(
   actionId: string, 
   action: T, 
   delay = 500
-): T {
+): T | undefined {
   return ((...args: Parameters<T>) => {
     const now = Date.now();
     const lastCall = debounceRef[actionId] || 0;
     if (now - lastCall < delay) {
-      return; // Skip if called too recently
+      return undefined;
     }
     debounceRef[actionId] = now;
     return action(...args);
-  }) as T;
+  }) as T | undefined;
 }

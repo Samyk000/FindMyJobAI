@@ -36,6 +36,14 @@ class SettingsIn(BaseModel):
         valid_sites = [s for s in v if s in SUPPORTED_SITES]
         return valid_sites if valid_sites else ["linkedin"]
 
+    @field_validator('data_mode')
+    @classmethod
+    def validate_data_mode(cls, v):
+        """Validate data_mode is either compact or full."""
+        if v not in ("compact", "full"):
+            return "compact"
+        return v
+
     @field_validator('results_per_site')
     @classmethod
     def validate_results(cls, v):

@@ -75,6 +75,7 @@ export default function ProgressBar({ stats, logs, isDark }: ProgressBarProps) {
     <output 
       className={`fixed bottom-0 left-0 right-0 z-[100] ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'} border-t shadow-lg`}
       aria-live="polite"
+      aria-atomic="true"
     >
       {/* Content */}
       <div className="px-4 py-3">

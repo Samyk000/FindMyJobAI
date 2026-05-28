@@ -32,23 +32,33 @@ export default function TabsBar({
       <div className={`lg:hidden border-b flex items-center justify-between px-2 py-1.5 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`} role="tablist" aria-label="Search tabs">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
           {tabs.map(tab => (
-            <button type="button"
-              key={tab.id}
-              onClick={() => onTabClick(tab.id)}
-              role="tab"
-              aria-selected={activeTabId === tab.id}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
-                activeTabId === tab.id
-                  ? isDark
-                    ? 'bg-teal-500/20 text-teal-400'
-                    : 'bg-teal-50 text-teal-700'
-                  : isDark
-                    ? 'text-zinc-500 hover:text-white'
-                    : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </button>
+            <div key={tab.id} className="flex items-center">
+              <button type="button"
+                onClick={() => onTabClick(tab.id)}
+                role="tab"
+                aria-selected={activeTabId === tab.id}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+                  activeTabId === tab.id
+                    ? isDark
+                      ? 'bg-teal-500/20 text-teal-400'
+                      : 'bg-teal-50 text-teal-700'
+                    : isDark
+                      ? 'text-zinc-500 hover:text-white'
+                      : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+              {tab.id !== 'all' && (
+                <button type="button"
+                  onClick={(e) => onCloseTab(tab.id, e)}
+                  aria-label={`Close ${tab.label}`}
+                  className={`ml-0.5 p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500 ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
           ))}
           <button type="button"
             onClick={onAddTab}
@@ -75,6 +85,7 @@ export default function TabsBar({
             onClick={() => onTabClick(tab.id)}
             role="tab"
             aria-selected={activeTabId === tab.id}
+            aria-controls={`tab-panel-${tab.id}`}
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {

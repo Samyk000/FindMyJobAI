@@ -44,6 +44,8 @@ class ScraperService:
         db = SessionLocal()
         count = 0
         duplicates = 0
+        batch_count = 0
+        BATCH_SIZE = 25
         
         # Calculate total queries for progress tracking
         titles = [t.strip() for t in (cfg_snapshot.get("titles") or "").split(",") if t.strip()]
@@ -120,8 +122,13 @@ class ScraperService:
                         batch_id=batch_id,
                     )
                     db.add(j)
-                    db.commit()
                     count += 1
+                    batch_count += 1
+                    
+                    # Batch commit every BATCH_SIZE jobs for performance
+                    if batch_count >= BATCH_SIZE:
+                        db.commit()
+                        batch_count = 0
                     
                     # Update stats in real-time
                     pipeline_manager.update(job_id, stats={
@@ -218,6 +225,11 @@ class ScraperService:
                 return
             
             final_state = "cancelled" if check_cancelled() else "done"
+            
+            # Final batch commit for any remaining jobs
+            if batch_count > 0:
+                db.commit()
+            
             pipeline_manager.update(job_id, state=final_state, stats={
                 "batch_id": batch_id,
                 "new_jobs": count,
