@@ -266,7 +266,7 @@ export const apiClient = {
    * Get pipeline logs
    */
   async getPipelineLogs(jobId: string): Promise<PipelineStatus> {
-    return fetchWithTimeout(`${API_BASE_URL}/logs/${jobId}`);
+    return fetchWithTimeout(`${API_BASE_URL}/logs/${jobId}`, {}, DEFAULT_TIMEOUT, false);
   },
 
   // --- SETTINGS ENDPOINTS ---

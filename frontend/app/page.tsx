@@ -11,11 +11,14 @@ import { DEFAULT_TABS } from "@/lib/constants";
 import { CONFIG } from "@/lib/config";
 
 // Utils
-import { 
-  loadThemeFromStorage, 
-  saveThemeToStorage, 
-  loadTabsFromStorage, 
-  saveTabsToStorage
+import {
+  loadThemeFromStorage,
+  saveThemeToStorage,
+  loadTabsFromStorage,
+  saveTabsToStorage,
+  loadActiveScrape,
+  saveActiveScrape,
+  clearActiveScrape
 } from "@/lib/utils";
 import apiClient from "@/lib/api";
 
@@ -235,12 +238,36 @@ export default function Page() {
       try {
         await fetchSettings();
         await fetchJobs();
+        await resumeActiveScrape();
       } finally {
         setIsLoading(false);
       }
     }
     bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // After a page refresh, reconnect to a scrape that is still running on the
+  // backend so polling resumes and the Cancel button stays available.
+  const resumeActiveScrape = useCallback(async () => {
+    const saved = loadActiveScrape();
+    if (!saved) return;
+    try {
+      const data = await apiClient.getPipelineLogs(saved.jobId);
+      if (data.state === 'running') {
+        // Restore UI state; the polling effect (keyed on pipelineJobId) takes over.
+        setPipeline(data);
+        setPipelineJobId(saved.jobId);
+        setCurrentBatchId(saved.batchId ?? (data.stats?.batch_id as string) ?? null);
+        setFetchingTabId(saved.fetchingTabId);
+      } else {
+        // Already finished/cancelled/expired while we were away — nothing to resume.
+        clearActiveScrape();
+      }
+    } catch {
+      // Pipeline not found (expired) or backend unreachable — drop the stale record.
+      clearActiveScrape();
+    }
   }, []);
 
   useEffect(() => { if (!isLoading) fetchJobs(); }, [viewStatus, isLoading, fetchJobs]);
@@ -366,6 +393,7 @@ export default function Page() {
           setPipelineJobId("");
           setCurrentBatchId(null);
           setFetchingTabId(null);
+          clearActiveScrape();
           if ((data.state === "done" || data.state === "cancelled") && data.stats?.batch_id) {
             handleSearchComplete(data.stats.batch_id as string);
           }
@@ -404,6 +432,7 @@ export default function Page() {
       setPipeline(null);
       setPipelineJobId("");
       setCurrentBatchId(null);
+      clearActiveScrape();
       await fetchSettings();
       setClearingData(false);
     } catch (err) {
@@ -515,9 +544,17 @@ export default function Page() {
         hours_old: finalHours
       });
       setPipelineJobId(data.job_id);
+      // Persist so a refresh mid-fetch can resume polling and keep Cancel available.
+      saveActiveScrape({
+        jobId: data.job_id,
+        batchId: data.batch_id ?? null,
+        fetchingTabId: tabIdThatInitiatedFetch,
+        startedAt: now
+      });
     } catch (err) {
       setPipeline({ state: "failed", logs: ["Failed."], stats: {} });
       setFetchingTabId(null);  // Clear on error
+      clearActiveScrape();
       setError(err instanceof Error ? err.message : 'Error starting search');
     } finally { setActionLoading(null); }
   }
@@ -525,6 +562,7 @@ export default function Page() {
   async function cancelScrape() {
     if (!pipelineJobId) return;
     setActionLoading('cancel');
+    clearActiveScrape();
     try {
       await apiClient.cancelScrape(pipelineJobId);
       // Clear pipeline state immediately - jobs remain visible
@@ -532,7 +570,7 @@ export default function Page() {
       setPipeline(null);
       setCurrentBatchId(null);
       setFetchingTabId(null);
-      setNotification("Search cancelled. Fetched jobs are kept.");
+      setNotification("Search cancelled");
       setTimeout(() => setNotification(null), 3000);
     } catch (err) {
       // Even if API fails, clear the local state
@@ -804,7 +842,7 @@ export default function Page() {
         />
 
         {/* LIST AREA */}
-        <div id={`tab-panel-${activeTabId}`} role="tabpanel" aria-labelledby={`tab-${activeTabId}`} className={`flex-1 overflow-y-auto p-0 scrollbar-thin ${isDark ? 'bg-black' : 'bg-white'}`} tabIndex={-1}>
+        <div id={`tab-panel-${activeTabId}`} role="tabpanel" aria-labelledby={`tab-${activeTabId}`} className={`flex-1 overflow-y-auto pb-16 scrollbar-thin ${isDark ? 'bg-black' : 'bg-white'}`} tabIndex={-1}>
           <JobList
             isDark={isDark}
             displayJobs={displayJobs}
@@ -813,7 +851,6 @@ export default function Page() {
             isPipelineRunning={pipeline?.state === 'running'}
             fetchingTabId={fetchingTabId}
             newJobIds={newJobIds}
-            notification={notification}
             onJobClick={handleJobClick}
             onSave={(id) => updateStatus(id, 'saved')}
             onReject={(id) => updateStatus(id, 'rejected')}
@@ -881,11 +918,20 @@ export default function Page() {
           current_query: (pipeline.stats?.current_query as number) || 0,
           current_site: (pipeline.stats?.current_site as string) || '',
           batch_id: (pipeline.stats?.batch_id as string) || '',
-          started_at: (pipeline.stats?.started_at as number) || Date.now(),
         }}
-        logs={pipeline.logs}
         isDark={isDark}
       />
+    )}
+
+    {/* NOTIFICATION TOAST */}
+    {notification && (
+      <div className={`fixed top-4 right-4 z-[200] px-3 py-1.5 rounded-md text-xs font-medium shadow-sm border animate-in slide-in-from-top-2 ${
+        isDark 
+          ? 'bg-zinc-800/90 border-zinc-700 text-zinc-300' 
+          : 'bg-white/90 border-gray-200 text-gray-600'
+      }`}>
+        {notification}
+      </div>
     )}
     </>
   );

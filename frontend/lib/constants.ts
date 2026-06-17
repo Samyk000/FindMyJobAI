@@ -8,6 +8,7 @@ export const DEFAULT_BACKEND = CONFIG.API_BASE_URL;
 export const TABS_STORAGE_KEY = "job-bot-tabs";
 export const ACTIVE_TAB_STORAGE_KEY = "job-bot-active-tab";
 export const THEME_STORAGE_KEY = "job-bot-theme";
+export const ACTIVE_SCRAPE_STORAGE_KEY = "job-bot-active-scrape";
 
 // Default Values
 export const DEFAULT_TABS: SearchTab[] = [{ id: 'all', label: 'All History', type: 'static' }];

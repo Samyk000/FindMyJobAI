@@ -90,6 +90,14 @@ memory/
 # Tauri sidecar binaries (built from backend)
 frontend/src-tauri/binaries/
 
+# Tauri build artifacts (keep installers for LFS)
+frontend/src-tauri/target/
+!frontend/src-tauri/target/release/bundle/
+frontend/src-tauri/target/release/bundle/msi/
+frontend/src-tauri/target/release/bundle/nsis/
+!frontend/src-tauri/target/release/bundle/nsis/*.exe
+!frontend/src-tauri/target/release/bundle/msi/*.msi
+
 # Development plans (keep locally, don't push to GitHub)
 plans/
 plans2/

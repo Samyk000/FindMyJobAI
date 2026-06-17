@@ -276,6 +276,12 @@ def scrape_jobs_incremental(
                 log(f"Warning: scrape failed for '{title}' in '{loc}': {e}")
                 continue
 
+            # Stop immediately if cancellation was requested during the (potentially
+            # long) network call above — don't process or save this query's results.
+            if is_cancelled and is_cancelled():
+                cancelled = True
+                break
+
             if not isinstance(df, pd.DataFrame) or df.empty:
                 continue
 
@@ -283,6 +289,12 @@ def scrape_jobs_incremental(
             rows = df.to_dict(orient="records")
 
             for r in rows:
+                # Check cancellation on every row so saving halts the moment the
+                # user clicks cancel, even mid-result-set.
+                if is_cancelled and is_cancelled():
+                    cancelled = True
+                    break
+
                 job_url = str(r.get("job_url") or "").strip()
                 title_r = str(r.get("title") or "").strip()
                 if not job_url or not title_r:
@@ -344,6 +356,10 @@ def scrape_jobs_incremental(
                 is_new = on_job_found(job)
                 if is_new:
                     kept_total += 1
+
+            # Break out of the location loop too if cancelled mid-result-set.
+            if cancelled:
+                break
         if cancelled:
             break
 

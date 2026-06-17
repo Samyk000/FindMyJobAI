@@ -1,9 +1,10 @@
 import { ThemeMode, SearchTab } from '@/types';
-import { 
-  TABS_STORAGE_KEY, 
-  ACTIVE_TAB_STORAGE_KEY, 
-  THEME_STORAGE_KEY, 
-  DEFAULT_TABS 
+import {
+  TABS_STORAGE_KEY,
+  ACTIVE_TAB_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  ACTIVE_SCRAPE_STORAGE_KEY,
+  DEFAULT_TABS
 } from './constants';
 
 // --- THEME STORAGE ---
@@ -56,6 +57,48 @@ export function saveTabsToStorage(tabs: SearchTab[], activeTabId: string): void 
     localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTabId);
   } catch (e) {
     console.error('Failed to save tabs:', e);
+  }
+}
+
+// --- ACTIVE SCRAPE STORAGE ---
+// Persists the in-flight scrape so a page refresh can resume polling and keep
+// the Cancel button available instead of orphaning the backend job.
+
+export interface ActiveScrape {
+  jobId: string;
+  batchId: string | null;
+  fetchingTabId: string | null;
+  startedAt: number;
+}
+
+export function loadActiveScrape(): ActiveScrape | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(ACTIVE_SCRAPE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ActiveScrape;
+    if (parsed && typeof parsed.jobId === 'string' && parsed.jobId) {
+      return parsed;
+    }
+  } catch (e) {
+    console.error('Failed to load active scrape:', e);
+  }
+  return null;
+}
+
+export function saveActiveScrape(scrape: ActiveScrape): void {
+  try {
+    localStorage.setItem(ACTIVE_SCRAPE_STORAGE_KEY, JSON.stringify(scrape));
+  } catch (e) {
+    console.error('Failed to save active scrape:', e);
+  }
+}
+
+export function clearActiveScrape(): void {
+  try {
+    localStorage.removeItem(ACTIVE_SCRAPE_STORAGE_KEY);
+  } catch (e) {
+    console.error('Failed to clear active scrape:', e);
   }
 }
 

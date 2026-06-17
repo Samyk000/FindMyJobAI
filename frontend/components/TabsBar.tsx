@@ -69,7 +69,7 @@ export default function TabsBar({
           </button>
         </div>
         {jobCount !== undefined && (
-          <span className={`text-[10px] font-medium px-2 flex-shrink-0 ${isDark ? 'text-zinc-500' : 'text-gray-500'}`} aria-live="polite">{jobCount} jobs</span>
+          <span className={`text-[10px] font-medium px-2 flex-shrink-0 ${isDark ? 'text-zinc-500' : 'text-gray-500'}`} role="status">{jobCount} jobs</span>
         )}
       </div>
     );

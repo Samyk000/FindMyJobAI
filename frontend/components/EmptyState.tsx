@@ -352,7 +352,7 @@ export default function EmptyState({
   return (
     <output 
       className="empty-state-enter flex flex-col items-center justify-center h-full py-12 px-4"
-      aria-live="polite"
+      role="status"
       aria-label={displayTitle}
     >
       {/* Animated SVG */}
