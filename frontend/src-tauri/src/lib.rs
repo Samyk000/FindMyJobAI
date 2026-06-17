@@ -166,6 +166,12 @@ pub fn run() {
             let handle_for_health = handle.clone();
             thread::spawn(move || {
                 if wait_for_backend(45) {
+                    // Emit multiple times to ensure the frontend catches it
+                    // even if its event listener registration is delayed.
+                    let _ = handle_for_health.emit("backend-ready", true);
+                    thread::sleep(Duration::from_secs(1));
+                    let _ = handle_for_health.emit("backend-ready", true);
+                    thread::sleep(Duration::from_secs(1));
                     let _ = handle_for_health.emit("backend-ready", true);
                 } else {
                     let _ = handle_for_health.emit(

@@ -38,6 +38,9 @@ DB_URL = get_env_str("DB_URL", get_database_url())
 # --- CORS CONFIGURATION ---
 def get_cors_origins() -> List[str]:
     """Parse CORS origins from environment."""
+    from database_config import is_frozen
+    if is_frozen():
+        return ["*"]
     origins = get_env_str("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
     if origins == "*":
         return ["*"]
