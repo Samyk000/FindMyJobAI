@@ -86,98 +86,105 @@ pub fn run() {
 
             let handle = app.handle().clone();
 
-            // ----- Case 1: Backend already running (dev mode or second instance) -----
-            if is_backend_healthy() {
+            // ----- Determine what to do -----
+            let already_running = is_backend_healthy();
+            let port_free = is_port_available();
+
+            // ----- Spawn sidecar if backend is not running and port is free -----
+            if already_running {
                 println!("[Jobify] Backend already running — reusing");
-                app.manage(BackendState {
-                    child: Mutex::new(None),
-                });
-                let _ = handle.emit("backend-ready", true);
-                return Ok(());
-            }
-
-            // ----- Case 2: Port occupied by something else -----
-            if !is_port_available() {
+            } else if !port_free {
                 eprintln!("[Jobify] Port 8000 is in use by another application!");
-                let _ = handle.emit(
-                    "backend-error",
-                    "Port 8000 is already in use by another application. Please close it and restart Jobify.",
-                );
-                app.manage(BackendState {
-                    child: Mutex::new(None),
-                });
-                return Ok(());
-            }
+            } else {
+                println!("[Jobify] Starting backend sidecar...");
 
-            // ----- Case 3: Launch the sidecar -----
-            println!("[Jobify] Starting backend sidecar...");
+                let sidecar_cmd = app
+                    .shell()
+                    .sidecar("backend")
+                    .map_err(|e| {
+                        eprintln!("[Jobify] Failed to create sidecar command: {}", e);
+                        e
+                    })?;
 
-            let sidecar_cmd = app
-                .shell()
-                .sidecar("backend")
-                .map_err(|e| {
-                    eprintln!("[Jobify] Failed to create sidecar command: {}", e);
+                let (mut rx, child) = sidecar_cmd.spawn().map_err(|e| {
+                    eprintln!("[Jobify] Failed to spawn sidecar: {}", e);
                     e
                 })?;
 
-            let (mut rx, child) = sidecar_cmd.spawn().map_err(|e| {
-                eprintln!("[Jobify] Failed to spawn sidecar: {}", e);
-                e
-            })?;
+                app.manage(BackendState {
+                    child: Mutex::new(Some(child)),
+                });
 
-            app.manage(BackendState {
-                child: Mutex::new(Some(child)),
-            });
-
-            // Read stdout/stderr in background (prevents pipe buffer deadlock)
-            let handle_for_output = handle.clone();
-            tauri::async_runtime::spawn(async move {
-                while let Some(event) = rx.recv().await {
-                    match event {
-                        CommandEvent::Stdout(line) => {
-                            let text = String::from_utf8_lossy(&line);
-                            print!("[Backend] {}", text);
+                // Read stdout/stderr in background (prevents pipe buffer deadlock)
+                let handle_for_output = handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    while let Some(event) = rx.recv().await {
+                        match event {
+                            CommandEvent::Stdout(line) => {
+                                let text = String::from_utf8_lossy(&line);
+                                print!("[Backend] {}", text);
+                            }
+                            CommandEvent::Stderr(line) => {
+                                let text = String::from_utf8_lossy(&line);
+                                eprint!("[Backend] {}", text);
+                            }
+                            CommandEvent::Error(err) => {
+                                eprintln!("[Backend Error] {}", err);
+                                let _ = handle_for_output.emit(
+                                    "backend-error",
+                                    format!("Backend error: {}", err),
+                                );
+                            }
+                            CommandEvent::Terminated(status) => {
+                                eprintln!("[Backend] Process terminated: {:?}", status);
+                                let _ = handle_for_output.emit(
+                                    "backend-error",
+                                    "Backend stopped unexpectedly. Please restart Jobify.",
+                                );
+                                break;
+                            }
+                            _ => {}
                         }
-                        CommandEvent::Stderr(line) => {
-                            let text = String::from_utf8_lossy(&line);
-                            eprint!("[Backend] {}", text);
-                        }
-                        CommandEvent::Error(err) => {
-                            eprintln!("[Backend Error] {}", err);
-                            let _ = handle_for_output.emit(
-                                "backend-error",
-                                format!("Backend error: {}", err),
-                            );
-                        }
-                        CommandEvent::Terminated(status) => {
-                            eprintln!("[Backend] Process terminated: {:?}", status);
-                            let _ = handle_for_output.emit(
-                                "backend-error",
-                                "Backend stopped unexpectedly. Please restart Jobify.",
-                            );
-                            break;
-                        }
-                        _ => {}
                     }
-                }
-            });
+                });
+            }
 
-            // Wait for health check in a separate thread
+            // Ensure BackendState is always managed (on_window_event needs it).
+            // If we spawned a sidecar above, it already managed with Some(child).
+            // Otherwise store None.
+            if already_running || !port_free {
+                app.manage(BackendState {
+                    child: Mutex::new(None),
+                });
+            }
+
+            // ----- Always spawn health check thread -----
+            // This emits backend-ready/backend-error multiple times with delays,
+            // ensuring the frontend's event listener catches it regardless of
+            // when the listener was registered.
             let handle_for_health = handle.clone();
             thread::spawn(move || {
+                let label = if already_running { "reuse" } else { "fresh" };
+                println!("[Jobify] Health check thread started ({})", label);
+
                 if wait_for_backend(45) {
-                    // Emit multiple times to ensure the frontend catches it
-                    // even if its event listener registration is delayed.
                     let _ = handle_for_health.emit("backend-ready", true);
                     thread::sleep(Duration::from_secs(1));
                     let _ = handle_for_health.emit("backend-ready", true);
                     thread::sleep(Duration::from_secs(1));
                     let _ = handle_for_health.emit("backend-ready", true);
                 } else {
-                    let _ = handle_for_health.emit(
-                        "backend-error",
-                        "Backend failed to start within 45 seconds. Please restart Jobify.",
-                    );
+                    if !port_free {
+                        let _ = handle_for_health.emit(
+                            "backend-error",
+                            "Port 8000 is already in use by another application. Please close it and restart Jobify.",
+                        );
+                    } else {
+                        let _ = handle_for_health.emit(
+                            "backend-error",
+                            "Backend failed to start within 45 seconds. Please restart Jobify.",
+                        );
+                    }
                 }
             });
 
